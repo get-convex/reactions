@@ -25,32 +25,46 @@ const query = queryGeneric as QueryBuilder<DataModel, "public">;
 const mutation = mutationGeneric as MutationBuilder<DataModel, "public">;
 const action = actionGeneric as ActionBuilder<DataModel, "public">;
 
-const reactions = new Reactions(components.reactions, {
-  shards: {
-    beans: 1,
-    friends: 2,
-  },
-  defaultShards: 1,
-});
+const reactions = new Reactions(components.reactions);
 
 export const testQuery = query({
-  args: { name: v.string() },
+  args: { targetId: v.string() },
+  returns: v.array(
+    v.object({
+      reactionType: v.string(),
+      count: v.number(),
+    }),
+  ),
   handler: async (ctx, args) => {
-    return await reactions.count(ctx, args.name);
+    return await reactions.getCounts(ctx, args.targetId);
   },
 });
 
 export const testMutation = mutation({
-  args: { name: v.string(), count: v.number() },
+  args: {
+    targetId: v.string(),
+    reactionType: v.string(),
+    userId: v.string(),
+  },
+  returns: v.object({
+    added: v.boolean(),
+  }),
   handler: async (ctx, args) => {
-    return await reactions.add(ctx, args.name, args.count);
+    return await reactions.toggle(ctx, args.targetId, args.reactionType, args.userId);
   },
 });
 
 export const testAction = action({
-  args: { name: v.string(), count: v.number() },
+  args: {
+    targetId: v.string(),
+    reactionType: v.string(),
+    userId: v.string(),
+  },
+  returns: v.object({
+    added: v.boolean(),
+  }),
   handler: async (ctx, args) => {
-    return await reactions.add(ctx, args.name, args.count);
+    return await reactions.add(ctx, args.targetId, args.reactionType, args.userId);
   },
 });
 
@@ -73,16 +87,44 @@ describe("Reactions thick client", () => {
     const c = new Reactions(components.reactions);
     const t = initConvexTest(schema);
     await t.run(async (ctx) => {
-      await c.add(ctx, "beans", 1);
-      expect(await c.count(ctx, "beans")).toBe(1);
+      await c.add(ctx, "post1", "👍", "user1");
+      const counts = await c.getCounts(ctx, "post1");
+      expect(counts).toEqual([{ reactionType: "👍", count: 1 }]);
     });
   });
   test("should work from a test function", async () => {
     const t = initConvexTest(schema);
     const result = await t.mutation(testApi.testMutation, {
-      name: "beans",
-      count: 1,
+      targetId: "post1",
+      reactionType: "❤️",
+      userId: "user1",
     });
-    expect(result).toBe(null);
+    expect(result.added).toBe(true);
+  });
+  test("toggle reaction on and off", async () => {
+    const c = new Reactions(components.reactions);
+    const t = initConvexTest(schema);
+    await t.run(async (ctx) => {
+      // Toggle on
+      const result1 = await c.toggle(ctx, "post1", "🎉", "user1");
+      expect(result1.added).toBe(true);
+
+      // Toggle off
+      const result2 = await c.toggle(ctx, "post1", "🎉", "user1");
+      expect(result2.added).toBe(false);
+
+      // Check counts are empty
+      const counts = await c.getCounts(ctx, "post1");
+      expect(counts).toEqual([]);
+    });
+  });
+  test("hasUserReacted", async () => {
+    const c = new Reactions(components.reactions);
+    const t = initConvexTest(schema);
+    await t.run(async (ctx) => {
+      await c.add(ctx, "post1", "👍", "user1");
+      expect(await c.hasUserReacted(ctx, "post1", "👍", "user1")).toBe(true);
+      expect(await c.hasUserReacted(ctx, "post1", "❤️", "user1")).toBe(false);
+    });
   });
 });

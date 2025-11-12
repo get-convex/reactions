@@ -7,53 +7,221 @@ import type { CtxWith } from "./types.js";
 // less stable and reliant on types within the component files, which can cause
 // issues where passing `components.foo` doesn't match the argument
 
-export class Reactions<Shards extends Record<string, number>> {
+export class Reactions {
   constructor(
     public component: ComponentApi,
     public options?: {
-      shards?: Shards;
-      defaultShards?: number;
       // Common parameters:
       // logLevel
     },
   ) {}
-  async add<Name extends string = keyof Shards & string>(
+
+  /**
+   * Toggle a reaction for a user on a target.
+   * If the reaction exists, it will be removed. If it doesn't, it will be added.
+   */
+  async toggle(
     ctx: CtxWith<"runMutation">,
-    name: Name,
-    count: number = 1,
+    targetId: string,
+    reactionType: string,
+    userId: string,
   ) {
-    const shards = this.options?.shards?.[name] ?? this.options?.defaultShards;
-    return ctx.runMutation(this.component.lib.add, {
-      name,
-      count,
-      shards,
+    return ctx.runMutation(this.component.lib.toggle, {
+      targetId,
+      reactionType,
+      userId,
     });
   }
-  async count<Name extends string = keyof Shards & string>(
-    ctx: CtxWith<"runQuery">,
-    name: Name,
+
+  /**
+   * Add a reaction for a user on a target.
+   * This is idempotent - if the reaction already exists, it does nothing.
+   */
+  async add(
+    ctx: CtxWith<"runMutation">,
+    targetId: string,
+    reactionType: string,
+    userId: string,
   ) {
-    return ctx.runQuery(this.component.lib.count, { name });
+    return ctx.runMutation(this.component.lib.add, {
+      targetId,
+      reactionType,
+      userId,
+    });
   }
+
+  /**
+   * Remove a reaction for a user on a target.
+   * This is idempotent - if the reaction doesn't exist, it does nothing.
+   */
+  async remove(
+    ctx: CtxWith<"runMutation">,
+    targetId: string,
+    reactionType: string,
+    userId: string,
+  ) {
+    return ctx.runMutation(this.component.lib.remove, {
+      targetId,
+      reactionType,
+      userId,
+    });
+  }
+
+  /**
+   * Get reaction counts for a target, grouped by reaction type.
+   */
+  async getCounts(ctx: CtxWith<"runQuery">, targetId: string) {
+    return ctx.runQuery(this.component.lib.getCounts, { targetId });
+  }
+
+  /**
+   * Get all individual reactions for a target.
+   */
+  async list(ctx: CtxWith<"runQuery">, targetId: string) {
+    return ctx.runQuery(this.component.lib.list, { targetId });
+  }
+
+  /**
+   * Get all reaction types that a user has used on a target.
+   */
+  async getUserReactions(
+    ctx: CtxWith<"runQuery">,
+    targetId: string,
+    userId: string,
+  ) {
+    return ctx.runQuery(this.component.lib.getUserReactions, {
+      targetId,
+      userId,
+    });
+  }
+
+  /**
+   * Check if a user has reacted with a specific reaction type on a target.
+   */
+  async hasUserReacted(
+    ctx: CtxWith<"runQuery">,
+    targetId: string,
+    reactionType: string,
+    userId: string,
+  ) {
+    return ctx.runQuery(this.component.lib.hasUserReacted, {
+      targetId,
+      reactionType,
+      userId,
+    });
+  }
+
   /**
    * For easy re-exporting.
-   * Apps can do
+   * Apps can do:
    * ```ts
-   * export const { add, count } = reactions.api();
+   * export const { toggle, getCounts, list } = reactions.api();
    * ```
    */
   api() {
     return {
-      add: mutationGeneric({
-        args: { name: v.string() },
+      toggle: mutationGeneric({
+        args: {
+          targetId: v.string(),
+          reactionType: v.string(),
+          userId: v.string(),
+        },
+        returns: v.object({
+          added: v.boolean(),
+        }),
         handler: async (ctx, args) => {
-          await this.add(ctx, args.name);
+          return await this.toggle(
+            ctx,
+            args.targetId,
+            args.reactionType,
+            args.userId,
+          );
         },
       }),
-      count: queryGeneric({
-        args: { name: v.string() },
+      add: mutationGeneric({
+        args: {
+          targetId: v.string(),
+          reactionType: v.string(),
+          userId: v.string(),
+        },
+        returns: v.object({
+          added: v.boolean(),
+        }),
         handler: async (ctx, args) => {
-          return await this.count(ctx, args.name);
+          return await this.add(
+            ctx,
+            args.targetId,
+            args.reactionType,
+            args.userId,
+          );
+        },
+      }),
+      remove: mutationGeneric({
+        args: {
+          targetId: v.string(),
+          reactionType: v.string(),
+          userId: v.string(),
+        },
+        returns: v.object({
+          removed: v.boolean(),
+        }),
+        handler: async (ctx, args) => {
+          return await this.remove(
+            ctx,
+            args.targetId,
+            args.reactionType,
+            args.userId,
+          );
+        },
+      }),
+      getCounts: queryGeneric({
+        args: { targetId: v.string() },
+        returns: v.array(
+          v.object({
+            reactionType: v.string(),
+            count: v.number(),
+          }),
+        ),
+        handler: async (ctx, args) => {
+          return await this.getCounts(ctx, args.targetId);
+        },
+      }),
+      list: queryGeneric({
+        args: { targetId: v.string() },
+        returns: v.array(
+          v.object({
+            _id: v.id("reactions"),
+            _creationTime: v.number(),
+            targetId: v.string(),
+            reactionType: v.string(),
+            userId: v.string(),
+          }),
+        ),
+        handler: async (ctx, args) => {
+          return await this.list(ctx, args.targetId);
+        },
+      }),
+      getUserReactions: queryGeneric({
+        args: { targetId: v.string(), userId: v.string() },
+        returns: v.array(v.string()),
+        handler: async (ctx, args) => {
+          return await this.getUserReactions(ctx, args.targetId, args.userId);
+        },
+      }),
+      hasUserReacted: queryGeneric({
+        args: {
+          targetId: v.string(),
+          reactionType: v.string(),
+          userId: v.string(),
+        },
+        returns: v.boolean(),
+        handler: async (ctx, args) => {
+          return await this.hasUserReacted(
+            ctx,
+            args.targetId,
+            args.reactionType,
+            args.userId,
+          );
         },
       }),
     };

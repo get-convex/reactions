@@ -27,15 +27,56 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       add: FunctionReference<
         "mutation",
         "internal",
-        { count: number; name: string; shards?: number },
-        null,
+        { reactionType: string; targetId: string; userId: string },
+        { added: boolean },
         Name
       >;
-      count: FunctionReference<
+      getCounts: FunctionReference<
         "query",
         "internal",
-        { name: string },
-        number,
+        { targetId: string },
+        Array<{ count: number; reactionType: string }>,
+        Name
+      >;
+      getUserReactions: FunctionReference<
+        "query",
+        "internal",
+        { targetId: string; userId: string },
+        Array<string>,
+        Name
+      >;
+      hasUserReacted: FunctionReference<
+        "query",
+        "internal",
+        { reactionType: string; targetId: string; userId: string },
+        boolean,
+        Name
+      >;
+      list: FunctionReference<
+        "query",
+        "internal",
+        { targetId: string },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          reactionType: string;
+          targetId: string;
+          userId: string;
+        }>,
+        Name
+      >;
+      remove: FunctionReference<
+        "mutation",
+        "internal",
+        { reactionType: string; targetId: string; userId: string },
+        { removed: boolean },
+        Name
+      >;
+      toggle: FunctionReference<
+        "mutation",
+        "internal",
+        { reactionType: string; targetId: string; userId: string },
+        { added: boolean },
         Name
       >;
     };

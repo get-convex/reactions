@@ -71,9 +71,17 @@ package.json.
 
 <!-- START: Include on https://convex.dev/components -->
 
-- [ ] What is some compelling syntax as a hook?
-- [ ] Why should you use this component?
-- [ ] Links to docs / other resources?
+A Convex component for adding reactions (like emojis 👍❤️🎉) to any content in
+your app. Perfect for social features, posts, comments, or any content that
+users can react to.
+
+**Features:**
+
+- ✅ Add/remove reactions with a single toggle
+- ✅ Denormalized counts for fast aggregation
+- ✅ Track which users reacted with what
+- ✅ Support for arbitrary reaction types (emojis, custom reactions, etc.)
+- ✅ Idempotent operations (safe to call multiple times)
 
 Found a bug? Feature request?
 [File it here](https://github.com/get-convex/reactions/issues).
@@ -111,14 +119,174 @@ export default app;
 
 ## Usage
 
+### Basic Setup
+
 ```ts
 import { components } from "./_generated/api";
 import { Reactions } from "@convex/reactions";
 
-const reactions = new Reactions(components.reactions, {
-  ...options,
+const reactions = new Reactions(components.reactions);
+```
+
+### Toggle a Reaction
+
+The most common operation - if the user has already reacted, remove it;
+otherwise add it:
+
+```ts
+import { mutation } from "./_generated/server";
+import { v } from "convex/values";
+
+export const toggleReaction = mutation({
+  args: {
+    postId: v.string(),
+    emoji: v.string(),
+    userId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await reactions.toggle(ctx, args.postId, args.emoji, args.userId);
+    return null;
+  },
 });
 ```
+
+### Get Reaction Counts
+
+Get aggregated counts for all reactions on a target:
+
+```ts
+import { query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const getPostReactions = query({
+  args: { postId: v.string() },
+  returns: v.array(
+    v.object({
+      reactionType: v.string(),
+      count: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    return await reactions.getCounts(ctx, args.postId);
+  },
+});
+// Returns: [{ reactionType: "👍", count: 5 }, { reactionType: "❤️", count: 3 }]
+```
+
+### Check User's Reactions
+
+See what reactions a user has made on a specific target:
+
+```ts
+export const getUserReactions = query({
+  args: {
+    postId: v.string(),
+    userId: v.string(),
+  },
+  returns: v.array(v.string()),
+  handler: async (ctx, args) => {
+    return await reactions.getUserReactions(ctx, args.postId, args.userId);
+  },
+});
+// Returns: ["👍", "❤️"] - the emojis this user has reacted with
+```
+
+### Check Specific Reaction
+
+Check if a user has reacted with a specific reaction:
+
+```ts
+export const hasUserLiked = query({
+  args: {
+    postId: v.string(),
+    userId: v.string(),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    return await reactions.hasUserReacted(ctx, args.postId, "👍", args.userId);
+  },
+});
+```
+
+## API Reference
+
+### Methods
+
+#### `toggle(ctx, targetId, reactionType, userId)`
+
+Toggle a reaction on a target. Adds if not present, removes if present.
+
+- Returns: `{ added: boolean }` - true if added, false if removed
+
+#### `add(ctx, targetId, reactionType, userId)`
+
+Add a reaction (idempotent - safe to call multiple times).
+
+- Returns: `{ added: boolean }` - false if already existed
+
+#### `remove(ctx, targetId, reactionType, userId)`
+
+Remove a reaction (idempotent - safe to call multiple times).
+
+- Returns: `{ removed: boolean }` - false if didn't exist
+
+#### `getCounts(ctx, targetId)`
+
+Get aggregated reaction counts for a target.
+
+- Returns: `Array<{ reactionType: string, count: number }>`
+
+#### `list(ctx, targetId)`
+
+Get all individual reaction documents for a target.
+
+- Returns: Array of reaction documents with `_id`, `_creationTime`, `targetId`,
+  `reactionType`, `userId`
+
+#### `getUserReactions(ctx, targetId, userId)`
+
+Get all reaction types a user has used on a target.
+
+- Returns: `string[]` - array of reaction types
+
+#### `hasUserReacted(ctx, targetId, reactionType, userId)`
+
+Check if a user has reacted with a specific reaction type.
+
+- Returns: `boolean`
+
+### Re-exporting the API
+
+You can directly re-export the component's API for convenience:
+
+```ts
+export const {
+  toggle,
+  add,
+  remove,
+  getCounts,
+  list,
+  getUserReactions,
+  hasUserReacted,
+} = reactions.api();
+```
+
+This allows clients to call these functions directly without wrapping them.
+
+## Data Model
+
+The component uses two tables:
+
+- **reactions**: Individual reactions (one per user + target + reactionType)
+  - `targetId`: string - the ID of the thing being reacted to
+  - `reactionType`: string - the reaction (e.g., "👍", "❤️")
+  - `userId`: string - who reacted
+
+- **reactionCounts**: Denormalized aggregates for fast queries
+  - `targetId`: string
+  - `reactionType`: string
+  - `count`: number
 
 See more example usage in [example.ts](./example/convex/example.ts).
 
