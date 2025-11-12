@@ -8,36 +8,20 @@ export default defineSchema({
     reactionType: v.string(),
     userId: v.string(),
     namespace: v.optional(v.string()),
-  })
-    .index("by_targetId_and_namespace", ["targetId", "namespace"])
-    .index("by_targetId_and_namespace_and_reactionType", [
-      "targetId",
-      "namespace",
-      "reactionType",
-    ])
-    .index("by_targetId_and_namespace_and_userId", [
-      "targetId",
-      "namespace",
-      "userId",
-    ])
-    .index("by_targetId_and_namespace_and_reactionType_and_userId", [
-      "targetId",
-      "namespace",
-      "reactionType",
-      "userId",
-    ]),
-
+  }).index("by_targetId_and_namespace_and_userId", [
+    "targetId",
+    "namespace",
+    "userId",
+  ]),
   // Denormalized counts for fast aggregation
   reactionCounts: defineTable({
     targetId: v.string(),
     reactionType: v.string(),
     count: v.number(),
     namespace: v.optional(v.string()),
-  })
-    .index("by_targetId_and_namespace", ["targetId", "namespace"])
-    .index("by_targetId_and_namespace_and_reactionType", [
-      "targetId",
-      "namespace",
-      "reactionType",
-    ]),
+  }).index("by_targetId_and_namespace_and_reactionType", [
+    "targetId",
+    "namespace",
+    "reactionType",
+  ]),
 });

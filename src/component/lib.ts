@@ -19,26 +19,27 @@ export const toggle = mutation({
   }),
   handler: async (ctx, args) => {
     // Check if this exact reaction already exists
-    const existing = await ctx.db
+    const existingReactions = await ctx.db
       .query("reactions")
-      .withIndex("by_targetId_and_namespace_and_reactionType_and_userId", (q) =>
+      .withIndex("by_targetId_and_namespace_and_userId", (q) =>
         q
           .eq("targetId", args.targetId)
           .eq("namespace", args.namespace ?? undefined)
-          .eq("reactionType", args.reactionType)
           .eq("userId", args.userId),
       )
-      .unique();
+      .collect();
 
-    if (existing) {
+    if (existingReactions.length > 0) {
       // Remove this reaction (toggle off)
-      await ctx.db.delete(existing._id);
-      await decrementCount(
-        ctx,
-        args.targetId,
-        args.reactionType,
-        args.namespace,
-      );
+      for (const reaction of existingReactions) {
+        await ctx.db.delete(reaction._id);
+        await decrementCount(
+          ctx,
+          args.targetId,
+          reaction.reactionType,
+          args.namespace,
+        );
+      }
       return { added: false };
     } else {
       // Remove any other reactions by this user on this target+namespace
@@ -84,20 +85,21 @@ export const add = mutation({
   }),
   handler: async (ctx, args) => {
     // Check if this exact reaction already exists
-    const existing = await ctx.db
+    const existingReactions = await ctx.db
       .query("reactions")
-      .withIndex("by_targetId_and_namespace_and_reactionType_and_userId", (q) =>
+      .withIndex("by_targetId_and_namespace_and_userId", (q) =>
         q
           .eq("targetId", args.targetId)
           .eq("namespace", args.namespace ?? undefined)
-          .eq("reactionType", args.reactionType)
           .eq("userId", args.userId),
       )
-      .unique();
+      .collect();
 
-    if (existing) {
-      // Already have this exact reaction, no-op
-      return { added: false };
+    if (existingReactions.length > 0) {
+      // check for the reaction type in the existing reactions
+      if (existingReactions.some((r) => r.reactionType === args.reactionType)) {
+        return { added: false };
+      }
     }
 
     // Remove any other reactions by this user on this target+namespace
@@ -136,24 +138,30 @@ export const remove = mutation({
   }),
   handler: async (ctx, args) => {
     // Check if reaction exists
-    const existing = await ctx.db
+    const existingReactions = await ctx.db
       .query("reactions")
-      .withIndex("by_targetId_and_namespace_and_reactionType_and_userId", (q) =>
+      .withIndex("by_targetId_and_namespace_and_userId", (q) =>
         q
           .eq("targetId", args.targetId)
           .eq("namespace", args.namespace ?? undefined)
-          .eq("reactionType", args.reactionType)
           .eq("userId", args.userId),
       )
-      .unique();
+      .collect();
 
-    if (!existing) {
+    if (existingReactions.length === 0) {
       return { removed: false };
     }
 
     // Remove reaction
-    await ctx.db.delete(existing._id);
-    await decrementCount(ctx, args.targetId, args.reactionType, args.namespace);
+    for (const reaction of existingReactions) {
+      await ctx.db.delete(reaction._id);
+      await decrementCount(
+        ctx,
+        args.targetId,
+        reaction.reactionType,
+        args.namespace,
+      );
+    }
     return { removed: true };
   },
 });
@@ -175,7 +183,7 @@ export const getCounts = query({
   handler: async (ctx, args) => {
     const counts = await ctx.db
       .query("reactionCounts")
-      .withIndex("by_targetId_and_namespace", (q) =>
+      .withIndex("by_targetId_and_namespace_and_reactionType", (q) =>
         q
           .eq("targetId", args.targetId)
           .eq("namespace", args.namespace ?? undefined),
@@ -212,7 +220,7 @@ export const list = query({
   handler: async (ctx, args) => {
     const reactions = await ctx.db
       .query("reactions")
-      .withIndex("by_targetId_and_namespace", (q) =>
+      .withIndex("by_targetId_and_namespace_and_userId", (q) =>
         q
           .eq("targetId", args.targetId)
           .eq("namespace", args.namespace ?? undefined),
@@ -262,14 +270,13 @@ export const hasUserReacted = query({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("reactions")
-      .withIndex("by_targetId_and_namespace_and_reactionType_and_userId", (q) =>
+      .withIndex("by_targetId_and_namespace_and_userId", (q) =>
         q
           .eq("targetId", args.targetId)
           .eq("namespace", args.namespace ?? undefined)
-          .eq("reactionType", args.reactionType)
           .eq("userId", args.userId),
       )
-      .unique();
+      .first();
 
     return existing !== null;
   },
