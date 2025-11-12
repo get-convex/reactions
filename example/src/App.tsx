@@ -40,7 +40,8 @@ function Post({ postId, userId }: { postId: string; userId: string }) {
     postId,
     userId,
   });
-  const toggleReaction = useMutation(api.example.toggleReaction);
+  const addReaction = useMutation(api.example.addReaction);
+  const removeReaction = useMutation(api.example.removeReaction);
 
   const emojis = ["👍", "❤️", "🎉", "🚀", "👀"];
 
@@ -74,13 +75,13 @@ function Post({ postId, userId }: { postId: string; userId: string }) {
           return (
             <button
               key={emoji}
-              onClick={() =>
-                toggleReaction({
-                  postId,
-                  emoji,
-                  userId,
-                })
-              }
+              onClick={() => {
+                if (hasReacted) {
+                  removeReaction({ postId, emoji, userId });
+                } else {
+                  addReaction({ postId, emoji, userId });
+                }
+              }}
               style={{
                 fontSize: "24px",
                 padding: "10px 15px",

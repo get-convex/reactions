@@ -88,17 +88,5 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         { removed: boolean },
         Name
       >;
-      toggle: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          namespace?: string;
-          reactionType: string;
-          targetId: string;
-          userId: string;
-        },
-        { added: boolean },
-        Name
-      >;
     };
   };

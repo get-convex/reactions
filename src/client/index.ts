@@ -17,25 +17,6 @@ export class Reactions {
   ) {}
 
   /**
-   * Toggle a reaction for a user on a target.
-   * If the reaction exists, it will be removed. If it doesn't, it will be added.
-   */
-  async toggle(
-    ctx: CtxWith<"runMutation">,
-    targetId: string,
-    reactionType: string,
-    userId: string,
-    namespace?: string,
-  ) {
-    return ctx.runMutation(this.component.lib.toggle, {
-      targetId,
-      reactionType,
-      userId,
-      namespace,
-    });
-  }
-
-  /**
    * Add a reaction for a user on a target.
    * This is idempotent - if the reaction already exists, it does nothing.
    */
@@ -125,31 +106,11 @@ export class Reactions {
    * For easy re-exporting.
    * Apps can do:
    * ```ts
-   * export const { toggle, getCounts, list } = reactions.api();
+   * export const { add, remove, getCounts, list } = reactions.api();
    * ```
    */
   api() {
     return {
-      toggle: mutationGeneric({
-        args: {
-          targetId: v.string(),
-          reactionType: v.string(),
-          userId: v.string(),
-          namespace: v.optional(v.string()),
-        },
-        returns: v.object({
-          added: v.boolean(),
-        }),
-        handler: async (ctx, args) => {
-          return await this.toggle(
-            ctx,
-            args.targetId,
-            args.reactionType,
-            args.userId,
-            args.namespace,
-          );
-        },
-      }),
       add: mutationGeneric({
         args: {
           targetId: v.string(),

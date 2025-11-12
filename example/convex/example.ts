@@ -6,11 +6,11 @@ import { v } from "convex/values";
 const reactions = new Reactions(components.reactions, {});
 
 /**
- * Example: Toggle a reaction on a post
- * If the user has already reacted with this emoji, it removes it.
- * Otherwise, it adds the reaction.
+ * Example: Add a reaction to a post
+ * If the user has already reacted with a different emoji, it will be replaced.
+ * If the user already has this exact reaction, this is a no-op.
  */
-export const toggleReaction = mutation({
+export const addReaction = mutation({
   args: {
     postId: v.string(),
     emoji: v.string(),
@@ -18,23 +18,23 @@ export const toggleReaction = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await reactions.toggle(ctx, args.postId, args.emoji, args.userId);
+    await reactions.add(ctx, args.postId, args.emoji, args.userId);
     return null;
   },
 });
 
 /**
- * Example: Add a reaction to a comment
+ * Example: Remove a reaction from a post
  */
-export const addReactionToComment = mutation({
+export const removeReaction = mutation({
   args: {
-    commentId: v.string(),
+    postId: v.string(),
     emoji: v.string(),
     userId: v.string(),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await reactions.add(ctx, args.commentId, args.emoji, args.userId);
+    await reactions.remove(ctx, args.postId, args.emoji, args.userId);
     return null;
   },
 });
@@ -89,7 +89,6 @@ export const hasUserLikedPost = query({
 // Direct re-export of component's API.
 // This allows clients to call these functions directly.
 export const {
-  toggle,
   add,
   remove,
   getCounts,

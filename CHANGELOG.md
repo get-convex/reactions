@@ -4,6 +4,12 @@
 
 ### Breaking Changes
 
+- **Removed `toggle` function to keep all operations idempotent**
+  - Use `add()` to add a reaction (automatically replaces any existing reaction)
+  - Use `remove()` to remove a specific reaction
+  - In React apps, implement toggle behavior by checking `userReactions` and
+    calling either `add()` or `remove()`
+
 - **Users can now only have one reaction per target+namespace**
   - When a user adds a new reaction, any existing reaction on that
     target+namespace is automatically removed

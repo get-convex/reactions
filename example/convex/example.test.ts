@@ -11,9 +11,9 @@ describe("example", () => {
     vi.useRealTimers();
   });
 
-  test("toggleReaction", async () => {
+  test("addReaction", async () => {
     const t = initConvexTest();
-    await t.mutation(api.example.toggleReaction, {
+    await t.mutation(api.example.addReaction, {
       postId: "post1",
       emoji: "👍",
       userId: "user1",
@@ -23,14 +23,7 @@ describe("example", () => {
   test("getPostReactions", async () => {
     const t = initConvexTest();
     // Add some reactions first
-    await t.mutation(api.example.addReactionToComment, {
-      commentId: "comment1",
-      emoji: "❤️",
-      userId: "user1",
-    });
-
-    // Query counts using the toggle function (which also adds)
-    await t.mutation(api.example.toggle, {
+    await t.mutation(api.example.add, {
       targetId: "post2",
       reactionType: "🎉",
       userId: "user2",

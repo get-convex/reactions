@@ -12,27 +12,36 @@ import type { FunctionReference } from "convex/server";
  * import { api } from "./convex/_generated/api";
  *
  * function Post({ postId, userId }) {
- *   const { counts, userReactions, toggle } = useReactions({
+ *   const { counts, userReactions, add, remove } = useReactions({
  *     targetId: postId,
  *     userId: userId,
  *     api: {
  *       getCounts: api.example.getCounts,
  *       getUserReactions: api.example.getUserReactions,
- *       toggle: api.example.toggle,
+ *       add: api.example.add,
+ *       remove: api.example.remove,
  *     },
  *   });
  *
  *   return (
  *     <div>
- *       {["👍", "❤️", "🎉"].map((emoji) => (
- *         <button
- *           key={emoji}
- *           onClick={() => toggle({ reactionType: emoji })}
- *           disabled={toggle.isLoading}
- *         >
- *           {emoji} {counts?.find((r) => r.reactionType === emoji)?.count || 0}
- *         </button>
- *       ))}
+ *       {["👍", "❤️", "🎉"].map((emoji) => {
+ *         const hasReacted = userReactions?.includes(emoji);
+ *         return (
+ *           <button
+ *             key={emoji}
+ *             onClick={() => {
+ *               if (hasReacted) {
+ *                 remove({ reactionType: emoji });
+ *               } else {
+ *                 add({ reactionType: emoji });
+ *               }
+ *             }}
+ *           >
+ *             {emoji} {counts?.find((r) => r.reactionType === emoji)?.count || 0}
+ *           </button>
+ *         );
+ *       })}
  *     </div>
  *   );
  * }
@@ -58,25 +67,37 @@ export function useReactions({
       { targetId: string; userId: string },
       string[]
     >;
-    toggle: FunctionReference<
+    add: FunctionReference<
       "mutation",
       "public",
       { targetId: string; reactionType: string; userId: string },
       { added: boolean }
     >;
+    remove: FunctionReference<
+      "mutation",
+      "public",
+      { targetId: string; reactionType: string; userId: string },
+      { removed: boolean }
+    >;
   };
 }) {
   const counts = useQuery(api.getCounts, { targetId });
   const userReactions = useQuery(api.getUserReactions, { targetId, userId });
-  const toggleMutation = useMutation(api.toggle);
+  const addMutation = useMutation(api.add);
+  const removeMutation = useMutation(api.remove);
 
-  const toggle = ({ reactionType }: { reactionType: string }) => {
-    return toggleMutation({ targetId, reactionType, userId });
+  const add = ({ reactionType }: { reactionType: string }) => {
+    return addMutation({ targetId, reactionType, userId });
+  };
+
+  const remove = ({ reactionType }: { reactionType: string }) => {
+    return removeMutation({ targetId, reactionType, userId });
   };
 
   return {
     counts,
     userReactions,
-    toggle,
+    add,
+    remove,
   };
 }

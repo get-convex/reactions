@@ -2,73 +2,6 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server.js";
 
 /**
- * Toggle a reaction for a user on a target.
- * If the reaction exists, it will be removed (and count decremented).
- * If it doesn't exist, any other reactions by this user on this target+namespace
- * will be removed first, then the new reaction will be added.
- */
-export const toggle = mutation({
-  args: {
-    targetId: v.string(),
-    reactionType: v.string(),
-    userId: v.string(),
-    namespace: v.optional(v.string()),
-  },
-  returns: v.object({
-    added: v.boolean(),
-  }),
-  handler: async (ctx, args) => {
-    // Check if this exact reaction already exists
-    const existingReactions = await ctx.db
-      .query("reactions")
-      .withIndex("by_targetId_and_namespace_and_userId", (q) =>
-        q
-          .eq("targetId", args.targetId)
-          .eq("namespace", args.namespace ?? undefined)
-          .eq("userId", args.userId),
-      )
-      .collect();
-
-    if (existingReactions.length > 0) {
-      // Remove this reaction (toggle off)
-      for (const reaction of existingReactions) {
-        await ctx.db.delete(reaction._id);
-        await decrementCount(
-          ctx,
-          args.targetId,
-          reaction.reactionType,
-          args.namespace,
-        );
-      }
-      return { added: false };
-    } else {
-      // Remove any other reactions by this user on this target+namespace
-      await removeAllUserReactionsOnTarget(
-        ctx,
-        args.targetId,
-        args.userId,
-        args.namespace,
-      );
-
-      // Add the new reaction
-      await ctx.db.insert("reactions", {
-        targetId: args.targetId,
-        reactionType: args.reactionType,
-        userId: args.userId,
-        namespace: args.namespace,
-      });
-      await incrementCount(
-        ctx,
-        args.targetId,
-        args.reactionType,
-        args.namespace,
-      );
-      return { added: true };
-    }
-  },
-});
-
-/**
  * Add a reaction for a user on a target.
  * Any existing reactions by this user on this target+namespace will be removed first.
  * If the exact reaction already exists, this is a no-op.
@@ -137,31 +70,25 @@ export const remove = mutation({
     removed: v.boolean(),
   }),
   handler: async (ctx, args) => {
-    // Check if reaction exists
-    const existingReactions = await ctx.db
+    // Check if this specific reaction exists
+    const existing = await ctx.db
       .query("reactions")
-      .withIndex("by_targetId_and_namespace_and_userId", (q) =>
+      .withIndex("by_targetId_and_namespace_and_reactionType_and_userId", (q) =>
         q
           .eq("targetId", args.targetId)
           .eq("namespace", args.namespace ?? undefined)
+          .eq("reactionType", args.reactionType)
           .eq("userId", args.userId),
       )
-      .collect();
+      .unique();
 
-    if (existingReactions.length === 0) {
+    if (!existing) {
       return { removed: false };
     }
 
-    // Remove reaction
-    for (const reaction of existingReactions) {
-      await ctx.db.delete(reaction._id);
-      await decrementCount(
-        ctx,
-        args.targetId,
-        reaction.reactionType,
-        args.namespace,
-      );
-    }
+    // Remove this specific reaction
+    await ctx.db.delete(existing._id);
+    await decrementCount(ctx, args.targetId, args.reactionType, args.namespace);
     return { removed: true };
   },
 });
@@ -270,13 +197,14 @@ export const hasUserReacted = query({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("reactions")
-      .withIndex("by_targetId_and_namespace_and_userId", (q) =>
+      .withIndex("by_targetId_and_namespace_and_reactionType_and_userId", (q) =>
         q
           .eq("targetId", args.targetId)
           .eq("namespace", args.namespace ?? undefined)
+          .eq("reactionType", args.reactionType)
           .eq("userId", args.userId),
       )
-      .first();
+      .unique();
 
     return existing !== null;
   },

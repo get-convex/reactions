@@ -45,32 +45,6 @@ describe("component lib", () => {
     expect(counts).toEqual([{ reactionType: "👍", count: 1 }]);
   });
 
-  test("toggle reaction on and off", async () => {
-    const t = convexTest(schema, modules);
-
-    // Toggle on
-    const result1 = await t.mutation(api.lib.toggle, {
-      targetId: "post1",
-      reactionType: "❤️",
-      userId: "user1",
-    });
-    expect(result1.added).toBe(true);
-
-    let counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "❤️", count: 1 }]);
-
-    // Toggle off
-    const result2 = await t.mutation(api.lib.toggle, {
-      targetId: "post1",
-      reactionType: "❤️",
-      userId: "user1",
-    });
-    expect(result2.added).toBe(false);
-
-    counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([]);
-  });
-
   test("multiple users multiple reactions", async () => {
     const t = convexTest(schema, modules);
 
@@ -308,30 +282,6 @@ describe("component lib", () => {
 
     expect(post1Counts).toEqual([{ reactionType: "👍", count: 1 }]);
     expect(post2Counts).toEqual([{ reactionType: "👍", count: 1 }]);
-  });
-
-  test("toggle switches between reactions automatically", async () => {
-    const t = convexTest(schema, modules);
-
-    // Toggle on with thumbs up
-    await t.mutation(api.lib.toggle, {
-      targetId: "post1",
-      reactionType: "👍",
-      userId: "user1",
-    });
-
-    let counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "👍", count: 1 }]);
-
-    // Toggle with heart (replaces thumbs up)
-    await t.mutation(api.lib.toggle, {
-      targetId: "post1",
-      reactionType: "❤️",
-      userId: "user1",
-    });
-
-    counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "❤️", count: 1 }]);
   });
 
   test("remove doesn't affect other users' reactions", async () => {

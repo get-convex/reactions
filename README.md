@@ -77,11 +77,11 @@ users can react to.
 
 **Features:**
 
-- ✅ Add/remove reactions with a single toggle
+- ✅ Idempotent add and remove operations
 - ✅ Denormalized counts for fast aggregation
 - ✅ Track which users reacted with what
 - ✅ Support for arbitrary reaction types (emojis, custom reactions, etc.)
-- ✅ Idempotent operations (safe to call multiple times)
+- ✅ All operations are idempotent (safe to call multiple times)
 - ✅ **One reaction per user per target+namespace** - changing reactions
   automatically removes the previous one
 
@@ -156,16 +156,16 @@ This makes the component perfect for:
 If you need multiple reactions per user, use different **namespaces** for each
 reaction category.
 
-### Toggle a Reaction
+### Add a Reaction
 
-The most common operation - if the user has already reacted, remove it;
-otherwise add it:
+Add a reaction to a target. If the user already has a different reaction on this
+target, it will be replaced automatically:
 
 ```ts
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-export const toggleReaction = mutation({
+export const addReaction = mutation({
   args: {
     postId: v.string(),
     emoji: v.string(),
@@ -173,7 +173,26 @@ export const toggleReaction = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await reactions.toggle(ctx, args.postId, args.emoji, args.userId);
+    await reactions.add(ctx, args.postId, args.emoji, args.userId);
+    return null;
+  },
+});
+```
+
+### Remove a Reaction
+
+Remove a specific reaction from a target:
+
+```ts
+export const removeReaction = mutation({
+  args: {
+    postId: v.string(),
+    emoji: v.string(),
+    userId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await reactions.remove(ctx, args.postId, args.emoji, args.userId);
     return null;
   },
 });
@@ -244,16 +263,17 @@ target. For example, you might want both "sentiment reactions" (👍❤️) and
 "quality ratings" (⭐) on the same post:
 
 ```ts
-// Sentiment reactions
-await reactions.toggle(ctx, "post-1", "👍", "user-1", "sentiment");
-await reactions.toggle(ctx, "post-1", "❤️", "user-1", "sentiment");
+// Sentiment reactions (user can have one in "sentiment" namespace)
+await reactions.add(ctx, "post-1", "👍", "user-1", "sentiment");
+// User changes their mind - this replaces 👍 in the "sentiment" namespace
+await reactions.add(ctx, "post-1", "❤️", "user-1", "sentiment");
 
-// Quality rating (separate namespace)
-await reactions.toggle(ctx, "post-1", "⭐", "user-1", "quality");
+// Quality rating (separate namespace - can exist simultaneously)
+await reactions.add(ctx, "post-1", "⭐", "user-1", "quality");
 
 // Get counts for each namespace
 const sentimentCounts = await reactions.getCounts(ctx, "post-1", "sentiment");
-// Returns: [{ reactionType: "👍", count: 1 }, { reactionType: "❤️", count: 1 }]
+// Returns: [{ reactionType: "❤️", count: 1 }] - only the latest sentiment
 
 const qualityCounts = await reactions.getCounts(ctx, "post-1", "quality");
 // Returns: [{ reactionType: "⭐", count: 1 }]
@@ -269,15 +289,6 @@ namespace. Namespaces ensure users can only react once per
 
 All methods accept an optional `namespace` parameter to scope reactions to
 different contexts.
-
-#### `toggle(ctx, targetId, reactionType, userId, namespace?)`
-
-Toggle a reaction on a target. If the user has this exact reaction, it will be
-removed. If they don't, any other reactions by this user on the target+namespace
-will be removed first, then this reaction will be added.
-
-- `namespace` (optional): Scope reactions to a specific namespace
-- Returns: `{ added: boolean }` - true if added, false if removed
 
 #### `add(ctx, targetId, reactionType, userId, namespace?)`
 
@@ -331,7 +342,6 @@ You can directly re-export the component's API for convenience:
 
 ```ts
 export const {
-  toggle,
   add,
   remove,
   getCounts,

@@ -50,7 +50,7 @@ export const testMutation = mutation({
     added: v.boolean(),
   }),
   handler: async (ctx, args) => {
-    return await reactions.toggle(ctx, args.targetId, args.reactionType, args.userId);
+    return await reactions.add(ctx, args.targetId, args.reactionType, args.userId);
   },
 });
 
@@ -101,17 +101,17 @@ describe("Reactions thick client", () => {
     });
     expect(result.added).toBe(true);
   });
-  test("toggle reaction on and off", async () => {
+  test("remove reaction", async () => {
     const c = new Reactions(components.reactions);
     const t = initConvexTest(schema);
     await t.run(async (ctx) => {
-      // Toggle on
-      const result1 = await c.toggle(ctx, "post1", "🎉", "user1");
+      // Add a reaction
+      const result1 = await c.add(ctx, "post1", "🎉", "user1");
       expect(result1.added).toBe(true);
 
-      // Toggle off
-      const result2 = await c.toggle(ctx, "post1", "🎉", "user1");
-      expect(result2.added).toBe(false);
+      // Remove it
+      const result2 = await c.remove(ctx, "post1", "🎉", "user1");
+      expect(result2.removed).toBe(true);
 
       // Check counts are empty
       const counts = await c.getCounts(ctx, "post1");
