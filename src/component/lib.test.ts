@@ -88,7 +88,7 @@ describe("component lib", () => {
       userId: "user2",
     });
 
-    // User 2 adds heart
+    // User 2 adds heart (replaces their thumbs up)
     await t.mutation(api.lib.add, {
       targetId: "post1",
       reactionType: "❤️",
@@ -96,8 +96,9 @@ describe("component lib", () => {
     });
 
     const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
+    // User1 has 👍, User2 has ❤️ (replaced their 👍)
     expect(counts).toEqual([
-      { reactionType: "👍", count: 2 },
+      { reactionType: "👍", count: 1 },
       { reactionType: "❤️", count: 1 },
     ]);
   });
@@ -110,6 +111,7 @@ describe("component lib", () => {
       reactionType: "👍",
       userId: "user1",
     });
+    // Adding heart replaces the thumbs up
     await t.mutation(api.lib.add, {
       targetId: "post1",
       reactionType: "❤️",
@@ -120,8 +122,9 @@ describe("component lib", () => {
       targetId: "post1",
       userId: "user1",
     });
-    expect(userReactions).toEqual(expect.arrayContaining(["👍", "❤️"]));
-    expect(userReactions).toHaveLength(2);
+    // User can only have one reaction per target+namespace
+    expect(userReactions).toEqual(["❤️"]);
+    expect(userReactions).toHaveLength(1);
   });
 
   test("hasUserReacted", async () => {
@@ -206,5 +209,79 @@ describe("component lib", () => {
     const reactions = await t.query(api.lib.list, { targetId: "post1" });
     expect(reactions).toHaveLength(2);
     expect(reactions.every((r) => r.targetId === "post1")).toBe(true);
+  });
+
+  test("changing reaction replaces previous reaction", async () => {
+    const t = convexTest(schema, modules);
+
+    // User adds thumbs up
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      reactionType: "👍",
+      userId: "user1",
+    });
+
+    let counts = await t.query(api.lib.getCounts, { targetId: "post1" });
+    expect(counts).toEqual([{ reactionType: "👍", count: 1 }]);
+
+    // User changes to heart (replaces thumbs up)
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      reactionType: "❤️",
+      userId: "user1",
+    });
+
+    counts = await t.query(api.lib.getCounts, { targetId: "post1" });
+    expect(counts).toEqual([{ reactionType: "❤️", count: 1 }]);
+
+    // User changes to fire (replaces heart)
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      reactionType: "🔥",
+      userId: "user1",
+    });
+
+    counts = await t.query(api.lib.getCounts, { targetId: "post1" });
+    expect(counts).toEqual([{ reactionType: "🔥", count: 1 }]);
+
+    // User should only have one reaction
+    const userReactions = await t.query(api.lib.getUserReactions, {
+      targetId: "post1",
+      userId: "user1",
+    });
+    expect(userReactions).toEqual(["🔥"]);
+  });
+
+  test("users can have different reactions in different namespaces", async () => {
+    const t = convexTest(schema, modules);
+
+    // User reacts in "sentiment" namespace
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      reactionType: "👍",
+      userId: "user1",
+      namespace: "sentiment",
+    });
+
+    // User reacts in "quality" namespace
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      reactionType: "⭐",
+      userId: "user1",
+      namespace: "quality",
+    });
+
+    // Both reactions should exist in their respective namespaces
+    const sentimentCounts = await t.query(api.lib.getCounts, {
+      targetId: "post1",
+      namespace: "sentiment",
+    });
+    expect(sentimentCounts).toEqual([{ reactionType: "👍", count: 1 }]);
+
+    const qualityCounts = await t.query(api.lib.getCounts, {
+      targetId: "post1",
+      namespace: "quality",
+    });
+    expect(qualityCounts).toEqual([{ reactionType: "⭐", count: 1 }]);
   });
 });

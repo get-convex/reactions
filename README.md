@@ -82,6 +82,8 @@ users can react to.
 - ✅ Track which users reacted with what
 - ✅ Support for arbitrary reaction types (emojis, custom reactions, etc.)
 - ✅ Idempotent operations (safe to call multiple times)
+- ✅ **One reaction per user per target+namespace** - changing reactions
+  automatically removes the previous one
 
 Found a bug? Feature request?
 [File it here](https://github.com/get-convex/reactions/issues).
@@ -127,6 +129,32 @@ import { Reactions } from "@convex/reactions";
 
 const reactions = new Reactions(components.reactions);
 ```
+
+### Important: One Reaction Per User
+
+Each user can only have **one reaction per target+namespace**. When a user
+reacts with a different emoji, their previous reaction is automatically removed
+and the counts are updated:
+
+```ts
+// User reacts with 👍
+await reactions.add(ctx, "post-1", "👍", "user-1");
+// Counts: 👍: 1
+
+// User changes to ❤️ - their 👍 is automatically removed
+await reactions.add(ctx, "post-1", "❤️", "user-1");
+// Counts: ❤️: 1 (👍 count went to 0)
+```
+
+This makes the component perfect for:
+
+- **Single-choice reactions** (like/unlike, upvote/downvote)
+- **Emoji reactions** where users pick one emoji
+- **Rating systems** where users can change their rating
+- **Voting systems** where users can change their vote
+
+If you need multiple reactions per user, use different **namespaces** for each
+reaction category.
 
 ### Toggle a Reaction
 
@@ -209,51 +237,92 @@ export const hasUserLiked = query({
 });
 ```
 
+### Using Namespaces
+
+Namespaces allow you to have multiple independent reaction systems on the same
+target. For example, you might want both "sentiment reactions" (👍❤️) and
+"quality ratings" (⭐) on the same post:
+
+```ts
+// Sentiment reactions
+await reactions.toggle(ctx, "post-1", "👍", "user-1", "sentiment");
+await reactions.toggle(ctx, "post-1", "❤️", "user-1", "sentiment");
+
+// Quality rating (separate namespace)
+await reactions.toggle(ctx, "post-1", "⭐", "user-1", "quality");
+
+// Get counts for each namespace
+const sentimentCounts = await reactions.getCounts(ctx, "post-1", "sentiment");
+// Returns: [{ reactionType: "👍", count: 1 }, { reactionType: "❤️", count: 1 }]
+
+const qualityCounts = await reactions.getCounts(ctx, "post-1", "quality");
+// Returns: [{ reactionType: "⭐", count: 1 }]
+```
+
+Without a namespace (or `undefined`), all reactions are in the default
+namespace. Namespaces ensure users can only react once per
+`targetId + namespace` combination.
+
 ## API Reference
 
 ### Methods
 
-#### `toggle(ctx, targetId, reactionType, userId)`
+All methods accept an optional `namespace` parameter to scope reactions to
+different contexts.
 
-Toggle a reaction on a target. Adds if not present, removes if present.
+#### `toggle(ctx, targetId, reactionType, userId, namespace?)`
 
+Toggle a reaction on a target. If the user has this exact reaction, it will be
+removed. If they don't, any other reactions by this user on the target+namespace
+will be removed first, then this reaction will be added.
+
+- `namespace` (optional): Scope reactions to a specific namespace
 - Returns: `{ added: boolean }` - true if added, false if removed
 
-#### `add(ctx, targetId, reactionType, userId)`
+#### `add(ctx, targetId, reactionType, userId, namespace?)`
 
-Add a reaction (idempotent - safe to call multiple times).
+Add a reaction. If the user already has this exact reaction, this is a no-op.
+Otherwise, any existing reactions by this user on the target+namespace will be
+removed first, then this reaction will be added.
 
-- Returns: `{ added: boolean }` - false if already existed
+- `namespace` (optional): Scope reactions to a specific namespace
+- Returns: `{ added: boolean }` - false if the exact same reaction already
+  existed
 
-#### `remove(ctx, targetId, reactionType, userId)`
+#### `remove(ctx, targetId, reactionType, userId, namespace?)`
 
 Remove a reaction (idempotent - safe to call multiple times).
 
+- `namespace` (optional): Scope reactions to a specific namespace
 - Returns: `{ removed: boolean }` - false if didn't exist
 
-#### `getCounts(ctx, targetId)`
+#### `getCounts(ctx, targetId, namespace?)`
 
 Get aggregated reaction counts for a target.
 
+- `namespace` (optional): Filter to a specific namespace
 - Returns: `Array<{ reactionType: string, count: number }>`
 
-#### `list(ctx, targetId)`
+#### `list(ctx, targetId, namespace?)`
 
 Get all individual reaction documents for a target.
 
+- `namespace` (optional): Filter to a specific namespace
 - Returns: Array of reaction documents with `_id`, `_creationTime`, `targetId`,
-  `reactionType`, `userId`
+  `reactionType`, `userId`, `namespace`
 
-#### `getUserReactions(ctx, targetId, userId)`
+#### `getUserReactions(ctx, targetId, userId, namespace?)`
 
 Get all reaction types a user has used on a target.
 
+- `namespace` (optional): Filter to a specific namespace
 - Returns: `string[]` - array of reaction types
 
-#### `hasUserReacted(ctx, targetId, reactionType, userId)`
+#### `hasUserReacted(ctx, targetId, reactionType, userId, namespace?)`
 
 Check if a user has reacted with a specific reaction type.
 
+- `namespace` (optional): Filter to a specific namespace
 - Returns: `boolean`
 
 ### Re-exporting the API

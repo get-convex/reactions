@@ -25,11 +25,13 @@ export class Reactions {
     targetId: string,
     reactionType: string,
     userId: string,
+    namespace?: string,
   ) {
     return ctx.runMutation(this.component.lib.toggle, {
       targetId,
       reactionType,
       userId,
+      namespace,
     });
   }
 
@@ -42,11 +44,13 @@ export class Reactions {
     targetId: string,
     reactionType: string,
     userId: string,
+    namespace?: string,
   ) {
     return ctx.runMutation(this.component.lib.add, {
       targetId,
       reactionType,
       userId,
+      namespace,
     });
   }
 
@@ -59,26 +63,28 @@ export class Reactions {
     targetId: string,
     reactionType: string,
     userId: string,
+    namespace?: string,
   ) {
     return ctx.runMutation(this.component.lib.remove, {
       targetId,
       reactionType,
       userId,
+      namespace,
     });
   }
 
   /**
    * Get reaction counts for a target, grouped by reaction type.
    */
-  async getCounts(ctx: CtxWith<"runQuery">, targetId: string) {
-    return ctx.runQuery(this.component.lib.getCounts, { targetId });
+  async getCounts(ctx: CtxWith<"runQuery">, targetId: string, namespace?: string) {
+    return ctx.runQuery(this.component.lib.getCounts, { targetId, namespace });
   }
 
   /**
    * Get all individual reactions for a target.
    */
-  async list(ctx: CtxWith<"runQuery">, targetId: string) {
-    return ctx.runQuery(this.component.lib.list, { targetId });
+  async list(ctx: CtxWith<"runQuery">, targetId: string, namespace?: string) {
+    return ctx.runQuery(this.component.lib.list, { targetId, namespace });
   }
 
   /**
@@ -88,10 +94,12 @@ export class Reactions {
     ctx: CtxWith<"runQuery">,
     targetId: string,
     userId: string,
+    namespace?: string,
   ) {
     return ctx.runQuery(this.component.lib.getUserReactions, {
       targetId,
       userId,
+      namespace,
     });
   }
 
@@ -103,11 +111,13 @@ export class Reactions {
     targetId: string,
     reactionType: string,
     userId: string,
+    namespace?: string,
   ) {
     return ctx.runQuery(this.component.lib.hasUserReacted, {
       targetId,
       reactionType,
       userId,
+      namespace,
     });
   }
 
@@ -125,6 +135,7 @@ export class Reactions {
           targetId: v.string(),
           reactionType: v.string(),
           userId: v.string(),
+          namespace: v.optional(v.string()),
         },
         returns: v.object({
           added: v.boolean(),
@@ -135,6 +146,7 @@ export class Reactions {
             args.targetId,
             args.reactionType,
             args.userId,
+            args.namespace,
           );
         },
       }),
@@ -143,6 +155,7 @@ export class Reactions {
           targetId: v.string(),
           reactionType: v.string(),
           userId: v.string(),
+          namespace: v.optional(v.string()),
         },
         returns: v.object({
           added: v.boolean(),
@@ -153,6 +166,7 @@ export class Reactions {
             args.targetId,
             args.reactionType,
             args.userId,
+            args.namespace,
           );
         },
       }),
@@ -161,6 +175,7 @@ export class Reactions {
           targetId: v.string(),
           reactionType: v.string(),
           userId: v.string(),
+          namespace: v.optional(v.string()),
         },
         returns: v.object({
           removed: v.boolean(),
@@ -171,11 +186,12 @@ export class Reactions {
             args.targetId,
             args.reactionType,
             args.userId,
+            args.namespace,
           );
         },
       }),
       getCounts: queryGeneric({
-        args: { targetId: v.string() },
+        args: { targetId: v.string(), namespace: v.optional(v.string()) },
         returns: v.array(
           v.object({
             reactionType: v.string(),
@@ -183,11 +199,11 @@ export class Reactions {
           }),
         ),
         handler: async (ctx, args) => {
-          return await this.getCounts(ctx, args.targetId);
+          return await this.getCounts(ctx, args.targetId, args.namespace);
         },
       }),
       list: queryGeneric({
-        args: { targetId: v.string() },
+        args: { targetId: v.string(), namespace: v.optional(v.string()) },
         returns: v.array(
           v.object({
             _id: v.id("reactions"),
@@ -195,17 +211,22 @@ export class Reactions {
             targetId: v.string(),
             reactionType: v.string(),
             userId: v.string(),
+            namespace: v.optional(v.string()),
           }),
         ),
         handler: async (ctx, args) => {
-          return await this.list(ctx, args.targetId);
+          return (await this.list(ctx, args.targetId, args.namespace)) as any;
         },
       }),
       getUserReactions: queryGeneric({
-        args: { targetId: v.string(), userId: v.string() },
+        args: { 
+          targetId: v.string(), 
+          userId: v.string(),
+          namespace: v.optional(v.string()),
+        },
         returns: v.array(v.string()),
         handler: async (ctx, args) => {
-          return await this.getUserReactions(ctx, args.targetId, args.userId);
+          return await this.getUserReactions(ctx, args.targetId, args.userId, args.namespace);
         },
       }),
       hasUserReacted: queryGeneric({
@@ -213,6 +234,7 @@ export class Reactions {
           targetId: v.string(),
           reactionType: v.string(),
           userId: v.string(),
+          namespace: v.optional(v.string()),
         },
         returns: v.boolean(),
         handler: async (ctx, args) => {
@@ -221,6 +243,7 @@ export class Reactions {
             args.targetId,
             args.reactionType,
             args.userId,
+            args.namespace,
           );
         },
       }),
