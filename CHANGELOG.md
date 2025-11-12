@@ -2,12 +2,8 @@
 
 ## Unreleased
 
-### New Features
+### Breaking Changes
 
-- Added optional `namespace` parameter to all functions
-  - Allows multiple independent reaction systems on the same target
-  - Users can only react once per `targetId + namespace` combination
-  - Backwards compatible (namesp
 - **Users can now only have one reaction per target+namespace**
   - When a user adds a new reaction, any existing reaction on that
     target+namespace is automatically removed
@@ -15,8 +11,14 @@
     reaction incremented)
   - This makes the component ideal for single-choice reactions, voting, and
     rating systems
-  - If you need multiple reactions per user, use different namespaces ace
-    defaults to `undefined`)
+  - If you need multiple reactions per user, use different namespaces
+
+### New Features
+
+- Added optional `namespace` parameter to all functions
+  - Allows multiple independent reaction systems on the same target
+  - Users can only react once per `targetId + namespace` combination
+  - Backwards compatible (namespace defaults to `undefined`)
 
 ## 0.1.0
 
