@@ -2,6 +2,7 @@ import "./App.css";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useEffect, useState } from "react";
+import type { Id } from "../convex/_generated/dataModel";
 
 // Generate a unique user ID per browser session
 function getOrCreateUserId(): string {
@@ -34,7 +35,16 @@ function getUserColor(userId: string): string {
   return colors[index];
 }
 
-function Post({ postId, userId }: { postId: string; userId: string }) {
+interface PostData {
+  _id: Id<"posts">;
+  _creationTime: number;
+  title: string;
+  content: string;
+  authorId: string;
+}
+
+function Post({ post, userId }: { post: PostData; userId: string }) {
+  const postId = post._id;
   const reactionCounts = useQuery(api.example.getPostReactions, { postId });
   const userReactions = useQuery(api.example.getUserPostReactions, {
     postId,
@@ -42,12 +52,19 @@ function Post({ postId, userId }: { postId: string; userId: string }) {
   });
   const addReaction = useMutation(api.example.addReaction);
   const removeReaction = useMutation(api.example.removeReaction);
+  const deletePost = useMutation(api.example.deletePost);
 
   const emojis = ["👍", "❤️", "🎉", "🚀", "👀"];
   
   // Construct the HTTP endpoint URL
   const convexUrl = (import.meta.env.VITE_CONVEX_URL).replace(".cloud", ".site");
   const httpEndpointUrl = `${convexUrl}/reactions/getCounts?targetId=${encodeURIComponent(postId)}`;
+
+  const handleDelete = async () => {
+    if (confirm("Are you sure you want to delete this post? All reactions will be removed too.")) {
+      await deletePost({ postId });
+    }
+  };
 
   return (
     <div
@@ -59,11 +76,42 @@ function Post({ postId, userId }: { postId: string; userId: string }) {
         background: "var(--card-bg)",
         backdropFilter: "blur(10px)",
         boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+        position: "relative",
       }}
     >
-      <h3 style={{ marginTop: 0, color: "var(--text-primary)", fontWeight: "600" }}>Sample Post #{postId.split("-")[1]}</h3>
-      <p style={{ color: "var(--text-secondary)" }}>
-        This is a demo post. React with emojis below!
+      <button
+        onClick={handleDelete}
+        style={{
+          position: "absolute",
+          top: "16px",
+          right: "16px",
+          background: "rgba(239, 68, 68, 0.15)",
+          border: "1px solid rgba(239, 68, 68, 0.3)",
+          borderRadius: "8px",
+          padding: "8px 12px",
+          cursor: "pointer",
+          fontSize: "14px",
+          color: "#ef4444",
+          fontWeight: "500",
+          transition: "all 0.2s",
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.background = "rgba(239, 68, 68, 0.25)";
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)";
+        }}
+      >
+        Delete Post
+      </button>
+      <h3 style={{ marginTop: 0, color: "var(--text-primary)", fontWeight: "600", paddingRight: "100px" }}>
+        {post.title}
+      </h3>
+      <p style={{ color: "var(--text-secondary)", marginBottom: "12px" }}>
+        {post.content}
+      </p>
+      <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "12px" }}>
+        Posted by {post.authorId} • {new Date(post._creationTime).toLocaleString()}
       </p>
       <p style={{ fontSize: "13px", marginTop: "8px" }}>
         <span style={{ color: "var(--text-muted)" }}>HTTP API: </span>
@@ -131,11 +179,19 @@ function App() {
   const [userId, setUserId] = useState<string>("");
   const userColor = getUserColor(userId);
 
+  const posts = useQuery(api.example.listPosts);
+  const generateSillyPost = useMutation(api.example.generateSillyPost);
+
   useEffect(() => {
     setUserId(getOrCreateUserId());
   }, []);
 
-  const posts = ["post-1", "post-2", "post-3"];
+  // Auto-generate a silly post if the list is empty on first load
+  useEffect(() => {
+    if (posts !== undefined && posts.length === 0 && userId) {
+      generateSillyPost({ authorId: userId });
+    }
+  }, [posts, userId, generateSillyPost]);
 
   if (!userId) {
     return <div>Loading...</div>;
@@ -182,16 +238,52 @@ function App() {
           💡 <strong>Try this:</strong>
         </p>
         <div style={{ margin: 0, paddingLeft: "0", fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.8" }}>
-          <div>Open this page in an incognito/private window</div>
-          <div>You'll get a different user ID (different color badge)</div>
-          <div>React to the posts and see them update in real-time!</div>
+          <div>Generate silly posts and add reactions</div>
+          <div>Delete a post to see cascade deletion of reactions</div>
+          <div>Open in incognito/private to see real-time updates</div>
         </div>
       </div>
 
+      <button
+        onClick={() => generateSillyPost({ authorId: userId })}
+        style={{
+          background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+          color: "#fff",
+          border: "none",
+          borderRadius: "12px",
+          padding: "16px 32px",
+          fontSize: "18px",
+          fontWeight: "600",
+          cursor: "pointer",
+          boxShadow: "0 4px 20px rgba(139, 92, 246, 0.3)",
+          transition: "all 0.3s",
+          width: "100%",
+          marginBottom: "30px",
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.transform = "translateY(-2px)";
+          e.currentTarget.style.boxShadow = "0 6px 25px rgba(139, 92, 246, 0.4)";
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "0 4px 20px rgba(139, 92, 246, 0.3)";
+        }}
+      >
+        🎲 Generate Silly Post
+      </button>
+
       <div className="card">
-        {posts.map((postId) => (
-          <Post key={postId} postId={postId} userId={userId} />
-        ))}
+        {posts === undefined ? (
+          <p style={{ textAlign: "center", color: "var(--text-muted)" }}>Loading posts...</p>
+        ) : posts.length === 0 ? (
+          <p style={{ textAlign: "center", color: "var(--text-muted)" }}>
+            No posts yet. Generate a silly post to get started!
+          </p>
+        ) : (
+          posts.map((post) => (
+            <Post key={post._id} post={post} userId={userId} />
+          ))
+        )}
         <p style={{ marginTop: "30px", fontSize: "14px", color: "var(--text-muted)" }}>
           See <code style={{ background: "var(--code-bg)", padding: "4px 8px", borderRadius: "6px", color: "var(--code-text)", border: `1px solid var(--code-border)` }}>example/convex/example.ts</code> for all the ways to use
           this component

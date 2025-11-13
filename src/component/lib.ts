@@ -192,6 +192,49 @@ export const hasUserReacted = query({
   },
 });
 
+/**
+ * Delete all reactions for a target (optionally filtered by namespace).
+ * This is useful for cascading deletes when removing content that has reactions.
+ */
+export const deleteAllForTarget = mutation({
+  args: {
+    targetId: v.string(),
+    namespace: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Delete all individual reactions for this target
+    const reactions = await ctx.db
+      .query("reactions")
+      .withIndex("targetId_namespace_userId_reactionType", (q) =>
+        q
+          .eq("targetId", args.targetId)
+          .eq("namespace", args.namespace ?? undefined),
+      )
+      .collect();
+
+    for (const reaction of reactions) {
+      await ctx.db.delete(reaction._id);
+    }
+
+    // Delete all reaction counts for this target
+    const counts = await ctx.db
+      .query("reactionCounts")
+      .withIndex("targetId_namespace_reactionType", (q) =>
+        q
+          .eq("targetId", args.targetId)
+          .eq("namespace", args.namespace ?? undefined),
+      )
+      .collect();
+
+    for (const count of counts) {
+      await ctx.db.delete(count._id);
+    }
+
+    return null;
+  },
+});
+
 // Helper functions
 
 async function incrementCount(

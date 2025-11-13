@@ -143,4 +143,19 @@ export class Reactions {
       namespace,
     });
   }
+
+  /**
+   * Delete all reactions for a target (optionally filtered by namespace).
+   * This is useful for cascading deletes when removing content that has reactions.
+   */
+  async deleteAllForTarget(
+    ctx: CtxWith<"runMutation">,
+    targetId: string,
+    namespace?: string,
+  ) {
+    return ctx.runMutation(this.component.lib.deleteAllForTarget, {
+      targetId,
+      namespace,
+    });
+  }
 }

@@ -84,6 +84,7 @@ users can react to.
 - ✅ All operations are idempotent (safe to call multiple times)
 - ✅ **One reaction per user per target+namespace** - changing reactions
   automatically removes the previous one
+- ✅ **Cascade deletion** - easily delete all reactions when content is removed
 
 Found a bug? Feature request?
 [File it here](https://github.com/get-convex/reactions/issues).
@@ -283,6 +284,37 @@ Without a namespace (or `undefined`), all reactions are in the default
 namespace. Namespaces ensure users can only react once per
 `targetId + namespace` combination.
 
+### Cascade Deletion
+
+When deleting content that has reactions (like posts or comments), you should
+also delete all associated reactions. The `deleteAllForTarget()` method makes
+this easy:
+
+```ts
+export const deletePost = mutation({
+  args: { postId: v.id("posts") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // First, delete all reactions for this post
+    await reactions.deleteAllForTarget(ctx, args.postId);
+
+    // Then delete the post itself
+    await ctx.db.delete(args.postId);
+    return null;
+  },
+});
+```
+
+This ensures that:
+
+- No orphaned reaction data remains in your database
+- Reaction counts are properly cleaned up
+- All namespaces for that target are handled automatically (unless you specify a
+  namespace parameter)
+
+The example app demonstrates this pattern with a posts table that supports
+cascade deletion.
+
 ## API Reference
 
 ### Methods
@@ -336,6 +368,31 @@ Check if a user has reacted with a specific reaction type.
 - `namespace` (optional): Filter to a specific namespace
 - Returns: `boolean`
 
+#### `deleteAllForTarget(ctx, targetId, namespace?)`
+
+Delete all reactions for a target. This is useful for cascading deletes when
+removing content that has reactions.
+
+- `namespace` (optional): Only delete reactions in this namespace
+- Returns: `null`
+
+Example usage when deleting a post:
+
+```ts
+export const deletePost = mutation({
+  args: { postId: v.id("posts") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // First, delete all reactions for this post
+    await reactions.deleteAllForTarget(ctx, args.postId);
+
+    // Then delete the post itself
+    await ctx.db.delete(args.postId);
+    return null;
+  },
+});
+```
+
 ### Re-exporting the API
 
 You can directly re-export the component's API for convenience:
@@ -348,6 +405,7 @@ export const {
   list,
   getUserReactions,
   hasUserReacted,
+  deleteAllForTarget,
 } = reactions.api();
 ```
 

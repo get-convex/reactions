@@ -36,6 +36,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         null,
         Name
       >;
+      deleteAllForTarget: FunctionReference<
+        "mutation",
+        "internal",
+        { namespace?: string; targetId: string },
+        null,
+        Name
+      >;
       getCounts: FunctionReference<
         "query",
         "internal",
