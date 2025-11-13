@@ -471,7 +471,9 @@ The component uses two tables:
   - `reactionType`: string
   - `count`: number
 
-See more example usage in [example.ts](./example/convex/example.ts).
+See more example usage in [example.ts](./example/convex/example.ts) for
+reactions usage and [posts.ts](./example/convex/posts.ts) for post management
+with cascade deletion.
 
 <!-- END: Include on https://convex.dev/components -->
 

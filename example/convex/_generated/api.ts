@@ -10,6 +10,7 @@
 
 import type * as example from "../example.js";
 import type * as http from "../http.js";
+import type * as posts from "../posts.js";
 
 import type {
   ApiFromModules,
@@ -21,6 +22,7 @@ import { anyApi, componentsGeneric } from "convex/server";
 const fullApi: ApiFromModules<{
   example: typeof example;
   http: typeof http;
+  posts: typeof posts;
 }> = anyApi as any;
 
 /**

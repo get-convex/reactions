@@ -52,7 +52,7 @@ function Post({ post, userId }: { post: PostData; userId: string }) {
   });
   const addReaction = useMutation(api.example.addReaction);
   const removeReaction = useMutation(api.example.removeReaction);
-  const deletePost = useMutation(api.example.deletePost);
+  const deletePost = useMutation(api.posts.deletePost);
 
   const emojis = ["👍", "❤️", "🎉", "🚀", "👀"];
   
@@ -179,8 +179,8 @@ function App() {
   const [userId, setUserId] = useState<string>("");
   const userColor = getUserColor(userId);
 
-  const posts = useQuery(api.example.listPosts);
-  const generateSillyPost = useMutation(api.example.generateSillyPost);
+  const posts = useQuery(api.posts.listPosts);
+  const generateSillyPost = useMutation(api.posts.generateSillyPost);
 
   useEffect(() => {
     setUserId(getOrCreateUserId());
@@ -285,8 +285,8 @@ function App() {
           ))
         )}
         <p style={{ marginTop: "30px", fontSize: "14px", color: "var(--text-muted)" }}>
-          See <code style={{ background: "var(--code-bg)", padding: "4px 8px", borderRadius: "6px", color: "var(--code-text)", border: `1px solid var(--code-border)` }}>example/convex/example.ts</code> for all the ways to use
-          this component
+          See <code style={{ background: "var(--code-bg)", padding: "4px 8px", borderRadius: "6px", color: "var(--code-text)", border: `1px solid var(--code-border)` }}>example/convex/example.ts</code> for reactions usage
+          and <code style={{ background: "var(--code-bg)", padding: "4px 8px", borderRadius: "6px", color: "var(--code-text)", border: `1px solid var(--code-border)` }}>posts.ts</code> for post management
         </p>
       </div>
     </>
