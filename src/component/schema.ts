@@ -8,7 +8,7 @@ export default defineSchema({
     reactionType: v.string(),
     userId: v.string(),
     namespace: v.optional(v.string()),
-  }).index("by_targetId_namespace_userId_reactionType", [
+  }).index("targetId_namespace_userId_reactionType", [
     "targetId",
     "namespace",
     "userId",
@@ -21,7 +21,7 @@ export default defineSchema({
     reactionType: v.string(),
     count: v.number(),
     namespace: v.optional(v.string()),
-  }).index("by_targetId_namespace_reactionType", [
+  }).index("targetId_namespace_reactionType", [
     "targetId",
     "namespace",
     "reactionType",
