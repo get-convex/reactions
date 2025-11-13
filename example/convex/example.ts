@@ -10,10 +10,15 @@ import { v } from "convex/values";
 
 export const reactions = new Reactions(components.reactions, {});
 
+// Define the set of allowed emoji reactions
+const ALLOWED_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"] as const;
+
 /**
  * Example: Add a reaction to a post
  * If the user has already reacted with a different emoji, it will be replaced.
  * If the user already has this exact reaction, this is a no-op.
+ *
+ * This demonstrates client-side validation to ensure only allowed emojis are accepted.
  */
 export const addReaction = mutation({
   args: {
@@ -23,6 +28,13 @@ export const addReaction = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    // Validate that the emoji is one of the allowed ones
+    if (!ALLOWED_EMOJIS.includes(args.emoji as any)) {
+      throw new Error(
+        `Invalid emoji: "${args.emoji}". Allowed emojis are: ${ALLOWED_EMOJIS.join(", ")}`,
+      );
+    }
+
     await reactions.add(ctx, args.postId, args.emoji, args.userId);
   },
 });
@@ -38,7 +50,26 @@ export const removeReaction = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    // Validate that the emoji is one of the allowed ones
+    if (!ALLOWED_EMOJIS.includes(args.emoji as any)) {
+      throw new Error(
+        `Invalid emoji: "${args.emoji}". Allowed emojis are: ${ALLOWED_EMOJIS.join(", ")}`,
+      );
+    }
+
     await reactions.remove(ctx, args.postId, args.emoji, args.userId);
+  },
+});
+
+/**
+ * Example: Get the list of allowed emojis
+ * Clients can use this to display available reactions to users
+ */
+export const getAllowedEmojis = query({
+  args: {},
+  returns: v.array(v.string()),
+  handler: async () => {
+    return [...ALLOWED_EMOJIS];
   },
 });
 
