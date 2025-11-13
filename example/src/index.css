@@ -4,26 +4,39 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  
+
   /* Dark mode variables */
   --text-primary: rgba(255, 255, 255, 0.9);
   --text-secondary: #d1d5db;
   --text-muted: #9ca3af;
   --bg-gradient: linear-gradient(135deg, #0a1929 0%, #1a2332 50%, #0f1419 100%);
-  --card-bg: linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(31, 41, 55, 0.6) 100%);
+  --card-bg: linear-gradient(
+    135deg,
+    rgba(17, 24, 39, 0.8) 0%,
+    rgba(31, 41, 55, 0.6) 100%
+  );
   --card-border: rgba(34, 211, 238, 0.15);
   --button-bg: rgba(31, 41, 55, 0.6);
   --button-border: rgba(75, 85, 99, 0.5);
-  --button-active-bg: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(59, 130, 246, 0.25));
+  --button-active-bg: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.25),
+    rgba(59, 130, 246, 0.25)
+  );
   --button-active-border: #22d3ee;
   --button-active-shadow: rgba(34, 211, 238, 0.3);
-  --info-bg: linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(59, 130, 246, 0.08));
+  --info-bg: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.08),
+    rgba(59, 130, 246, 0.08)
+  );
   --info-border: rgba(34, 211, 238, 0.15);
   --code-bg: rgba(17, 24, 39, 0.8);
   --code-text: #67e8f9;
   --code-border: rgba(34, 211, 238, 0.2);
   --badge-border: rgba(255, 255, 255, 0.15);
-  
+  --link-color: #22d3ee;
+
   color: var(--text-primary);
   background: var(--bg-gradient);
   background-attachment: fixed;
@@ -89,50 +102,68 @@ button:focus-visible {
     --text-primary: #1e293b;
     --text-secondary: #475569;
     --text-muted: #64748b;
-    --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8fafc 100%);
-    --card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%);
+    --bg-gradient: linear-gradient(
+      135deg,
+      #f0f9ff 0%,
+      #e0f2fe 50%,
+      #f8fafc 100%
+    );
+    --card-bg: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(248, 250, 252, 0.8) 100%
+    );
     --card-border: rgba(8, 145, 178, 0.2);
     --button-bg: rgba(255, 255, 255, 0.8);
     --button-border: rgba(226, 232, 240, 0.8);
-    --button-active-bg: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(59, 130, 246, 0.15));
+    --button-active-bg: linear-gradient(
+      135deg,
+      rgba(6, 182, 212, 0.15),
+      rgba(59, 130, 246, 0.15)
+    );
     --button-active-border: #0891b2;
     --button-active-shadow: rgba(8, 145, 178, 0.2);
-    --info-bg: linear-gradient(135deg, rgba(224, 242, 254, 0.6), rgba(219, 234, 254, 0.6));
+    --info-bg: linear-gradient(
+      135deg,
+      rgba(224, 242, 254, 0.6),
+      rgba(219, 234, 254, 0.6)
+    );
     --info-border: rgba(8, 145, 178, 0.3);
     --code-bg: rgba(241, 245, 249, 0.8);
     --code-text: #0891b2;
     --code-border: rgba(8, 145, 178, 0.3);
     --badge-border: rgba(0, 0, 0, 0.1);
-    
+    --link-color: #0891b2;
+
     color: var(--text-primary);
     background: var(--bg-gradient);
   }
-  
+
   a {
     color: #0891b2;
   }
-  
+
   a:hover {
     color: #06b6d4;
   }
-  
+
   h1 {
     background: linear-gradient(135deg, #0891b2 0%, #2563eb 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   button {
     background-color: #ffffff;
     border: 1px solid #e2e8f0;
   }
-  
+
   button:hover {
     border-color: #0891b2;
     background-color: #f8fafc;
   }
-  
+
   button:focus,
   button:focus-visible {
     outline: 2px solid #0891b2;

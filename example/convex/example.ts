@@ -1,9 +1,14 @@
+/**
+ * Example usage of the Reactions component.
+ *
+ * See http.ts for an example of exposing reactions via HTTP endpoints.
+ */
 import { mutation, query } from "./_generated/server.js";
 import { components } from "./_generated/api.js";
 import { Reactions } from "@convex/reactions";
 import { v } from "convex/values";
 
-const reactions = new Reactions(components.reactions, {});
+export const reactions = new Reactions(components.reactions, {});
 
 /**
  * Example: Add a reaction to a post

@@ -1,3 +1,4 @@
+import { httpActionGeneric, type HttpRouter } from "convex/server";
 import type { ComponentApi } from "../component/_generated/component.js";
 import type { CtxWith } from "./types.js";
 
@@ -15,6 +16,44 @@ export class Reactions {
     },
   ) {}
 
+  // example of how to register routes for the component
+
+  registerRoutes(
+    http: HttpRouter,
+    {
+      path = "/getCounts",
+    }: {
+      path?: string;
+    },
+  ) {
+    http.route({
+      path,
+      method: "GET",
+      handler: httpActionGeneric(async (ctx, req) => {
+        const url = new URL(req.url);
+        const targetId = url.searchParams.get("targetId");
+        if (!targetId) {
+          return new Response(
+            JSON.stringify({ error: "Missing targetId parameter" }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        const namespace = url.searchParams.get("namespace");
+        const counts = await this.getCounts(
+          ctx,
+          targetId,
+          namespace || undefined,
+        );
+        return new Response(JSON.stringify(counts), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    });
+  }
   /**
    * Add a reaction for a user on a target.
    * This is idempotent - if the reaction already exists, it does nothing.

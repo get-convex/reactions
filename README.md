@@ -353,6 +353,52 @@ export const {
 
 This allows clients to call these functions directly without wrapping them.
 
+### HTTP Endpoints
+
+You can expose reaction counts via HTTP for use in external applications,
+webhooks, or public APIs. The `Reactions` class provides a `registerRoutes()`
+method to easily add HTTP endpoints.
+
+First, export your `Reactions` instance (e.g., in `convex/reactions.ts` or any
+file):
+
+```ts
+import { components } from "./_generated/api";
+import { Reactions } from "@convex/reactions";
+
+export const reactions = new Reactions(components.reactions, {});
+```
+
+Then create an `http.ts` file in your `convex/` folder and register the routes:
+
+```ts
+import { httpRouter } from "convex/server";
+import { reactions } from "./reactions";
+
+const http = httpRouter();
+
+// Register the reactions HTTP endpoint
+reactions.registerRoutes(http, {
+  path: "/reactions/getCounts",
+});
+
+export default http;
+```
+
+This creates a public endpoint at
+`https://your-deployment.convex.site/reactions/getCounts?targetId=post-1` that
+returns JSON like:
+
+```json
+[
+  { "reactionType": "👍", "count": 5 },
+  { "reactionType": "❤️", "count": 3 }
+]
+```
+
+You can also include an optional `namespace` query parameter:
+`/reactions/getCounts?targetId=post-1&namespace=sentiment`
+
 ## Data Model
 
 The component uses two tables:

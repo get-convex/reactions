@@ -44,6 +44,10 @@ function Post({ postId, userId }: { postId: string; userId: string }) {
   const removeReaction = useMutation(api.example.removeReaction);
 
   const emojis = ["👍", "❤️", "🎉", "🚀", "👀"];
+  
+  // Construct the HTTP endpoint URL
+  const convexUrl = (import.meta.env.VITE_CONVEX_URL).replace(".cloud", ".site");
+  const httpEndpointUrl = `${convexUrl}/reactions/getCounts?targetId=${encodeURIComponent(postId)}`;
 
   return (
     <div
@@ -60,6 +64,21 @@ function Post({ postId, userId }: { postId: string; userId: string }) {
       <h3 style={{ marginTop: 0, color: "var(--text-primary)", fontWeight: "600" }}>Sample Post #{postId.split("-")[1]}</h3>
       <p style={{ color: "var(--text-secondary)" }}>
         This is a demo post. React with emojis below!
+      </p>
+      <p style={{ fontSize: "13px", marginTop: "8px" }}>
+        <span style={{ color: "var(--text-muted)" }}>HTTP API: </span>
+        <a 
+          href={httpEndpointUrl} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ 
+            color: "var(--link-color)", 
+            textDecoration: "none",
+            borderBottom: "1px dotted var(--link-color)"
+          }}
+        >
+          View JSON counts →
+        </a>
       </p>
       <div
         style={{
@@ -162,11 +181,11 @@ function App() {
         <p style={{ margin: "0 0 12px 0", fontSize: "15px", color: "var(--text-primary)", fontWeight: "600" }}>
           💡 <strong>Try this:</strong>
         </p>
-        <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.8" }}>
-          <li>Open this page in an incognito/private window</li>
-          <li>You'll get a different user ID (different color badge)</li>
-          <li>React to the posts and see them update in real-time!</li>
-        </ul>
+        <div style={{ margin: 0, paddingLeft: "0", fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.8" }}>
+          <div>Open this page in an incognito/private window</div>
+          <div>You'll get a different user ID (different color badge)</div>
+          <div>React to the posts and see them update in real-time!</div>
+        </div>
       </div>
 
       <div className="card">
