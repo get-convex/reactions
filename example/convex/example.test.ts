@@ -23,9 +23,9 @@ describe("example", () => {
   test("getPostReactions", async () => {
     const t = initConvexTest();
     // Add some reactions first
-    await t.mutation(api.example.add, {
-      targetId: "post2",
-      reactionType: "🎉",
+    await t.mutation(api.example.addReaction, {
+      postId: "post2",
+      emoji: "🎉",
       userId: "user2",
     });
 
@@ -39,9 +39,9 @@ describe("example", () => {
   test("getUserPostReactions", async () => {
     const t = initConvexTest();
 
-    await t.mutation(api.example.add, {
-      targetId: "post3",
-      reactionType: "👍",
+    await t.mutation(api.example.addReaction, {
+      postId: "post3",
+      emoji: "👍",
       userId: "user1",
     });
 
@@ -56,9 +56,9 @@ describe("example", () => {
   test("hasUserLikedPost", async () => {
     const t = initConvexTest();
 
-    await t.mutation(api.example.add, {
-      targetId: "post4",
-      reactionType: "👍",
+    await t.mutation(api.example.addReaction, {
+      postId: "post4",
+      emoji: "👍",
       userId: "user1",
     });
 

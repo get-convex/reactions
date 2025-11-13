@@ -1,5 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server.js";
+import type { GenericMutationCtx } from "convex/server";
+import type { DataModel } from "./_generated/dataModel.js";
 
 /**
  * Add a reaction for a user on a target.
@@ -13,28 +15,8 @@ export const add = mutation({
     userId: v.string(),
     namespace: v.optional(v.string()),
   },
-  returns: v.object({
-    added: v.boolean(),
-  }),
+  returns: v.null(),
   handler: async (ctx, args) => {
-    // Check if this exact reaction already exists
-    const existingReactions = await ctx.db
-      .query("reactions")
-      .withIndex("by_targetId_namespace_userId_reactionType", (q) =>
-        q
-          .eq("targetId", args.targetId)
-          .eq("namespace", args.namespace ?? undefined)
-          .eq("userId", args.userId),
-      )
-      .collect();
-
-    if (existingReactions.length > 0) {
-      // check for the reaction type in the existing reactions
-      if (existingReactions.some((r) => r.reactionType === args.reactionType)) {
-        return { added: false };
-      }
-    }
-
     // Remove any other reactions by this user on this target+namespace
     await removeAllUserReactionsOnTarget(
       ctx,
@@ -51,7 +33,7 @@ export const add = mutation({
       namespace: args.namespace,
     });
     await incrementCount(ctx, args.targetId, args.reactionType, args.namespace);
-    return { added: true };
+    return;
   },
 });
 
@@ -66,9 +48,7 @@ export const remove = mutation({
     userId: v.string(),
     namespace: v.optional(v.string()),
   },
-  returns: v.object({
-    removed: v.boolean(),
-  }),
+  returns: v.null(),
   handler: async (ctx, args) => {
     // Check if this specific reaction exists
     const existing = await ctx.db
@@ -82,14 +62,16 @@ export const remove = mutation({
       )
       .unique();
 
-    if (!existing) {
-      return { removed: false };
+    if (existing) {
+      // Remove this specific reaction
+      await ctx.db.delete(existing._id);
+      await decrementCount(
+        ctx,
+        args.targetId,
+        args.reactionType,
+        args.namespace,
+      );
     }
-
-    // Remove this specific reaction
-    await ctx.db.delete(existing._id);
-    await decrementCount(ctx, args.targetId, args.reactionType, args.namespace);
-    return { removed: true };
   },
 });
 
@@ -213,14 +195,14 @@ export const hasUserReacted = query({
 // Helper functions
 
 async function incrementCount(
-  ctx: { db: any },
+  ctx: GenericMutationCtx<DataModel>,
   targetId: string,
   reactionType: string,
   namespace?: string,
 ) {
   const existing = await ctx.db
     .query("reactionCounts")
-    .withIndex("by_targetId_namespace_reactionType", (q: any) =>
+    .withIndex("by_targetId_namespace_reactionType", (q) =>
       q
         .eq("targetId", targetId)
         .eq("namespace", namespace ?? undefined)
@@ -243,14 +225,14 @@ async function incrementCount(
 }
 
 async function decrementCount(
-  ctx: { db: any },
+  ctx: GenericMutationCtx<DataModel>,
   targetId: string,
   reactionType: string,
   namespace?: string,
 ) {
   const existing = await ctx.db
     .query("reactionCounts")
-    .withIndex("by_targetId_namespace_reactionType", (q: any) =>
+    .withIndex("by_targetId_namespace_reactionType", (q) =>
       q
         .eq("targetId", targetId)
         .eq("namespace", namespace ?? undefined)
@@ -267,14 +249,14 @@ async function decrementCount(
 }
 
 async function removeAllUserReactionsOnTarget(
-  ctx: { db: any },
+  ctx: GenericMutationCtx<DataModel>,
   targetId: string,
   userId: string,
   namespace?: string,
 ) {
   const existingReactions = await ctx.db
     .query("reactions")
-    .withIndex("by_targetId_namespace_userId_reactionType", (q: any) =>
+    .withIndex("by_targetId_namespace_userId_reactionType", (q) =>
       q
         .eq("targetId", targetId)
         .eq("namespace", namespace ?? undefined)

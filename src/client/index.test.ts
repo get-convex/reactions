@@ -46,11 +46,14 @@ export const testMutation = mutation({
     reactionType: v.string(),
     userId: v.string(),
   },
-  returns: v.object({
-    added: v.boolean(),
-  }),
+  returns: v.null(),
   handler: async (ctx, args) => {
-    return await reactions.add(ctx, args.targetId, args.reactionType, args.userId);
+    return await reactions.add(
+      ctx,
+      args.targetId,
+      args.reactionType,
+      args.userId,
+    );
   },
 });
 
@@ -60,11 +63,14 @@ export const testAction = action({
     reactionType: v.string(),
     userId: v.string(),
   },
-  returns: v.object({
-    added: v.boolean(),
-  }),
+  returns: v.null(),
   handler: async (ctx, args) => {
-    return await reactions.add(ctx, args.targetId, args.reactionType, args.userId);
+    return await reactions.add(
+      ctx,
+      args.targetId,
+      args.reactionType,
+      args.userId,
+    );
   },
 });
 
@@ -99,7 +105,7 @@ describe("Reactions thick client", () => {
       reactionType: "❤️",
       userId: "user1",
     });
-    expect(result.added).toBe(true);
+    expect(result).toBeNull();
   });
   test("remove reaction", async () => {
     const c = new Reactions(components.reactions);
@@ -107,11 +113,11 @@ describe("Reactions thick client", () => {
     await t.run(async (ctx) => {
       // Add a reaction
       const result1 = await c.add(ctx, "post1", "🎉", "user1");
-      expect(result1.added).toBe(true);
+      expect(result1).toBeNull();
 
       // Remove it
       const result2 = await c.remove(ctx, "post1", "🎉", "user1");
-      expect(result2.removed).toBe(true);
+      expect(result2).toBeNull();
 
       // Check counts are empty
       const counts = await c.getCounts(ctx, "post1");

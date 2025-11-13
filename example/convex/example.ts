@@ -19,7 +19,6 @@ export const addReaction = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     await reactions.add(ctx, args.postId, args.emoji, args.userId);
-    return null;
   },
 });
 
@@ -35,7 +34,6 @@ export const removeReaction = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     await reactions.remove(ctx, args.postId, args.emoji, args.userId);
-    return null;
   },
 });
 
@@ -85,14 +83,3 @@ export const hasUserLikedPost = query({
     return await reactions.hasUserReacted(ctx, args.postId, "👍", args.userId);
   },
 });
-
-// Direct re-export of component's API.
-// This allows clients to call these functions directly.
-export const {
-  add,
-  remove,
-  getCounts,
-  list,
-  getUserReactions,
-  hasUserReacted,
-} = reactions.api();

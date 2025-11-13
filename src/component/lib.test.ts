@@ -21,7 +21,7 @@ describe("component lib", () => {
       reactionType: "👍",
       userId: "user1",
     });
-    expect(result.added).toBe(true);
+    expect(result).toBeNull();
 
     const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
     expect(counts).toEqual([{ reactionType: "👍", count: 1 }]);
@@ -39,7 +39,7 @@ describe("component lib", () => {
       reactionType: "👍",
       userId: "user1",
     });
-    expect(result.added).toBe(false);
+    expect(result).toBeNull();
 
     const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
     expect(counts).toEqual([{ reactionType: "👍", count: 1 }]);
@@ -152,7 +152,7 @@ describe("component lib", () => {
       reactionType: "👍",
       userId: "user1",
     });
-    expect(result.removed).toBe(true);
+    expect(result).toBeNull();
 
     const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
     expect(counts).toEqual([]);
@@ -166,7 +166,7 @@ describe("component lib", () => {
       reactionType: "👍",
       userId: "user1",
     });
-    expect(result.removed).toBe(false);
+    expect(result).toBeNull();
   });
 
   test("list all reactions", async () => {
@@ -629,7 +629,7 @@ describe("component lib", () => {
       userId: "user1",
     });
 
-    expect(result.removed).toBe(false);
+    expect(result).toBeNull();
 
     // Original reaction should still be there
     const hasReacted = await t.query(api.lib.hasUserReacted, {
@@ -674,7 +674,7 @@ describe("component lib", () => {
       reactionType: "👍",
       userId: "user1",
     });
-    expect(result1.added).toBe(true);
+    expect(result1).toBeNull();
 
     // User adds second reaction - should replace the first
     const result2 = await t.mutation(api.lib.add, {
@@ -682,7 +682,7 @@ describe("component lib", () => {
       reactionType: "❤️",
       userId: "user1",
     });
-    expect(result2.added).toBe(true);
+    expect(result2).toBeNull();
 
     // Only the second reaction should exist
     const reactions = await t.query(api.lib.list, { targetId: "post1" });

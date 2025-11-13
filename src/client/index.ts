@@ -1,5 +1,3 @@
-import { mutationGeneric, queryGeneric } from "convex/server";
-import { v } from "convex/values";
 import type { ComponentApi } from "../component/_generated/component.js";
 import type { CtxWith } from "./types.js";
 
@@ -10,6 +8,7 @@ import type { CtxWith } from "./types.js";
 export class Reactions {
   constructor(
     public component: ComponentApi,
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     public options?: {
       // Common parameters:
       // logLevel
@@ -57,7 +56,11 @@ export class Reactions {
   /**
    * Get reaction counts for a target, grouped by reaction type.
    */
-  async getCounts(ctx: CtxWith<"runQuery">, targetId: string, namespace?: string) {
+  async getCounts(
+    ctx: CtxWith<"runQuery">,
+    targetId: string,
+    namespace?: string,
+  ) {
     return ctx.runQuery(this.component.lib.getCounts, { targetId, namespace });
   }
 
@@ -100,114 +103,5 @@ export class Reactions {
       userId,
       namespace,
     });
-  }
-
-  /**
-   * For easy re-exporting.
-   * Apps can do:
-   * ```ts
-   * export const { add, remove, getCounts, list } = reactions.api();
-   * ```
-   */
-  api() {
-    return {
-      add: mutationGeneric({
-        args: {
-          targetId: v.string(),
-          reactionType: v.string(),
-          userId: v.string(),
-          namespace: v.optional(v.string()),
-        },
-        returns: v.object({
-          added: v.boolean(),
-        }),
-        handler: async (ctx, args) => {
-          return await this.add(
-            ctx,
-            args.targetId,
-            args.reactionType,
-            args.userId,
-            args.namespace,
-          );
-        },
-      }),
-      remove: mutationGeneric({
-        args: {
-          targetId: v.string(),
-          reactionType: v.string(),
-          userId: v.string(),
-          namespace: v.optional(v.string()),
-        },
-        returns: v.object({
-          removed: v.boolean(),
-        }),
-        handler: async (ctx, args) => {
-          return await this.remove(
-            ctx,
-            args.targetId,
-            args.reactionType,
-            args.userId,
-            args.namespace,
-          );
-        },
-      }),
-      getCounts: queryGeneric({
-        args: { targetId: v.string(), namespace: v.optional(v.string()) },
-        returns: v.array(
-          v.object({
-            reactionType: v.string(),
-            count: v.number(),
-          }),
-        ),
-        handler: async (ctx, args) => {
-          return await this.getCounts(ctx, args.targetId, args.namespace);
-        },
-      }),
-      list: queryGeneric({
-        args: { targetId: v.string(), namespace: v.optional(v.string()) },
-        returns: v.array(
-          v.object({
-            _id: v.id("reactions"),
-            _creationTime: v.number(),
-            targetId: v.string(),
-            reactionType: v.string(),
-            userId: v.string(),
-            namespace: v.optional(v.string()),
-          }),
-        ),
-        handler: async (ctx, args) => {
-          return (await this.list(ctx, args.targetId, args.namespace)) as any;
-        },
-      }),
-      getUserReactions: queryGeneric({
-        args: { 
-          targetId: v.string(), 
-          userId: v.string(),
-          namespace: v.optional(v.string()),
-        },
-        returns: v.array(v.string()),
-        handler: async (ctx, args) => {
-          return await this.getUserReactions(ctx, args.targetId, args.userId, args.namespace);
-        },
-      }),
-      hasUserReacted: queryGeneric({
-        args: {
-          targetId: v.string(),
-          reactionType: v.string(),
-          userId: v.string(),
-          namespace: v.optional(v.string()),
-        },
-        returns: v.boolean(),
-        handler: async (ctx, args) => {
-          return await this.hasUserReacted(
-            ctx,
-            args.targetId,
-            args.reactionType,
-            args.userId,
-            args.namespace,
-          );
-        },
-      }),
-    };
   }
 }

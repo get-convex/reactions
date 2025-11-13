@@ -33,7 +33,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           targetId: string;
           userId: string;
         },
-        { added: boolean },
+        null,
         Name
       >;
       getCounts: FunctionReference<
@@ -85,7 +85,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           targetId: string;
           userId: string;
         },
-        { removed: boolean },
+        null,
         Name
       >;
     };
