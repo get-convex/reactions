@@ -25,7 +25,7 @@ describe("example", () => {
     // Add some reactions first
     await t.mutation(api.example.addReaction, {
       postId: "post2",
-      emoji: "🎉",
+      emoji: "❤️",
       userId: "user2",
     });
 
@@ -33,7 +33,7 @@ describe("example", () => {
       postId: "post2",
     });
 
-    expect(counts).toEqual([{ reactionType: "🎉", count: 1 }]);
+    expect(counts).toEqual([{ reactionType: "❤️", count: 1 }]);
   });
 
   test("getUserPostReactions", async () => {
