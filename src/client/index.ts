@@ -16,44 +16,6 @@ export class Reactions {
     },
   ) {}
 
-  // example of how to register routes for the component
-
-  registerRoutes(
-    http: HttpRouter,
-    {
-      path = "/getCounts",
-    }: {
-      path?: string;
-    },
-  ) {
-    http.route({
-      path,
-      method: "GET",
-      handler: httpActionGeneric(async (ctx, req) => {
-        const url = new URL(req.url);
-        const targetId = url.searchParams.get("targetId");
-        if (!targetId) {
-          return new Response(
-            JSON.stringify({ error: "Missing targetId parameter" }),
-            {
-              status: 400,
-              headers: { "Content-Type": "application/json" },
-            },
-          );
-        }
-        const namespace = url.searchParams.get("namespace");
-        const counts = await this.getCounts(
-          ctx,
-          targetId,
-          namespace || undefined,
-        );
-        return new Response(JSON.stringify(counts), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
-      }),
-    });
-  }
   /**
    * Add a reaction for a user on a target.
    * This is idempotent - if the reaction already exists, it does nothing.
@@ -156,6 +118,52 @@ export class Reactions {
     return ctx.runMutation(this.component.lib.deleteAllForTarget, {
       targetId,
       namespace,
+    });
+  }
+
+  /**
+   * Register routes for the component.
+   * This is a convenience method to register routes for the component.
+   * @param http - The http router to register the routes on.
+   * @param options - The options for the routes.
+   * @returns The http router with the routes registered.
+   */
+
+  // example of how to register routes for the component
+  registerRoutes(
+    http: HttpRouter,
+    {
+      path,
+    }: {
+      path: string;
+    },
+  ) {
+    http.route({
+      path,
+      method: "GET",
+      handler: httpActionGeneric(async (ctx, req) => {
+        const url = new URL(req.url);
+        const targetId = url.searchParams.get("targetId");
+        if (!targetId) {
+          return new Response(
+            JSON.stringify({ error: "Missing targetId parameter" }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        const namespace = url.searchParams.get("namespace");
+        const counts = await this.getCounts(
+          ctx,
+          targetId,
+          namespace || undefined,
+        );
+        return new Response(JSON.stringify(counts), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
     });
   }
 }
