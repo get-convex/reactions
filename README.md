@@ -84,6 +84,10 @@ users can react to.
 - ✅ All operations are idempotent (safe to call multiple times)
 - ✅ **One reaction per user per target+namespace** - changing reactions
   automatically removes the previous one
+- ✅ **Multiple reactions per user** - optional mode to allow users to have
+  multiple different reactions on the same target
+- ✅ **Batch operations** - efficiently get counts for multiple targets in a
+  single query
 - ✅ **Cascade deletion** - easily delete all reactions when content is removed
 
 Found a bug? Feature request?
@@ -131,11 +135,11 @@ import { Reactions } from "@convex/reactions";
 const reactions = new Reactions(components.reactions);
 ```
 
-### Important: One Reaction Per User
+### Important: Default Behavior - One Reaction Per User
 
-Each user can only have **one reaction per target+namespace**. When a user
-reacts with a different emoji, their previous reaction is automatically removed
-and the counts are updated:
+By default, each user can only have **one reaction per target+namespace**. When
+a user reacts with a different emoji, their previous reaction is automatically
+removed and the counts are updated:
 
 ```ts
 // User reacts with 👍
@@ -147,16 +151,21 @@ await reactions.add(ctx, "post-1", "❤️", "user-1");
 // Counts: ❤️: 1 (👍 count went to 0)
 ```
 
-This makes the component perfect for:
+This default behavior makes the component perfect for:
 
 - **Single-choice reactions** (like/unlike, upvote/downvote)
 - **Emoji reactions** where users pick one emoji
 - **Rating systems** where users can change their rating
 - **Voting systems** where users can change their vote
 
-If you need multiple reactions per user, you have two options:
-- Use different **namespaces** for each reaction category, or
-- Set `allowMultipleReactions: true` to allow multiple reactions in the same namespace
+**Need multiple reactions per user?**
+
+You have two options:
+
+1. Use different **namespaces** for each reaction category (recommended for
+   different types of reactions)
+2. Set `allowMultipleReactions: true` to allow multiple reactions in the same
+   namespace (see below)
 
 ### Add a Reaction
 
@@ -183,7 +192,9 @@ export const addReaction = mutation({
 
 ### Allow Multiple Reactions Per User
 
-By default, each user can only have one reaction per target. To allow a user to have multiple different reactions on the same target, set `allowMultipleReactions` to `true`:
+By default, each user can only have one reaction per target. To allow a user to
+have multiple different reactions on the same target, set
+`allowMultipleReactions` to `true`:
 
 ```ts
 export const addMultipleReaction = mutation({
@@ -207,11 +218,36 @@ export const addMultipleReaction = mutation({
 });
 ```
 
-With `allowMultipleReactions: true`:
-- Users can react with multiple different emojis on the same target
-- Adding the same reaction twice is still a no-op (idempotent)
-- Previous reactions are NOT removed when adding a new one
-- This is useful for scenarios where you want users to express multiple emotions simultaneously
+**Behavior with `allowMultipleReactions: true`:**
+
+```ts
+// User adds thumbs up
+await reactions.add(ctx, "post-1", "👍", "user-1", undefined, true);
+// Counts: 👍: 1
+
+// User also adds heart - previous reaction is NOT removed
+await reactions.add(ctx, "post-1", "❤️", "user-1", undefined, true);
+// Counts: 👍: 1, ❤️: 1
+
+// User adds heart again - no-op (idempotent)
+await reactions.add(ctx, "post-1", "❤️", "user-1", undefined, true);
+// Counts: 👍: 1, ❤️: 1 (unchanged)
+```
+
+**Use cases for multiple reactions:**
+
+- **Social media posts** where users can express multiple emotions (like Slack's
+  reactions)
+- **Content tagging** where users can add multiple labels
+- **Multi-dimensional feedback** where users rate different aspects
+- **Collaborative boards** where team members can add multiple stickers/badges
+
+**When to use single vs. multiple reactions:**
+
+- **Single reaction (default)**: Like/unlike, upvote/downvote, rating systems
+  where users pick one option
+- **Multiple reactions**: When users should be able to express multiple emotions
+  or tag content with multiple labels simultaneously
 
 ### Remove a Reaction
 
@@ -254,6 +290,72 @@ export const getPostReactions = query({
 });
 // Returns: [{ label: "👍", count: 5 }, { label: "❤️", count: 3 }]
 ```
+
+### Batch Get Reaction Counts
+
+For better performance when displaying multiple items (like a feed of posts),
+use `getBatchCounts` to get reaction counts for multiple targets in a single
+query. This is much more efficient than calling `getCounts` multiple times, as
+it reduces overhead from crossing the component isolation boundary:
+
+```ts
+export const getBatchPostReactions = query({
+  args: { postIds: v.array(v.string()) },
+  returns: v.array(
+    v.object({
+      targetId: v.string(),
+      namespace: v.optional(v.string()),
+      counts: v.array(
+        v.object({
+          label: v.string(),
+          count: v.number(),
+        }),
+      ),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const targets = args.postIds.map((postId) => ({ targetId: postId }));
+    return await reactions.getBatchCounts(ctx, targets);
+  },
+});
+```
+
+Returns:
+
+```js
+[
+  {
+    targetId: "post-1",
+    counts: [
+      { label: "👍", count: 5 },
+      { label: "❤️", count: 3 },
+    ],
+  },
+  {
+    targetId: "post-2",
+    counts: [{ label: "🚀", count: 2 }],
+  },
+  {
+    targetId: "post-3",
+    counts: [], // No reactions yet
+  },
+];
+```
+
+You can also pass different namespaces for each target:
+
+```ts
+const targets = [
+  { targetId: "post-1" },
+  { targetId: "post-2", namespace: "sentiment" },
+  { targetId: "post-3", namespace: "quality" },
+];
+return await reactions.getBatchCounts(ctx, targets);
+```
+
+**Performance tip**: When rendering a list of items (posts, comments, etc.),
+always prefer `getBatchCounts` over multiple `getCounts` calls. Component
+boundaries have overhead, and batching reduces this significantly.
 
 ### Check User's Reactions
 
@@ -357,12 +459,13 @@ different contexts.
 
 #### `add(ctx, targetId, label, userId, namespace?, allowMultipleReactions?)`
 
-Add a reaction. If the user already has this exact reaction, this is a no-op.
-By default, any existing reactions by this user on the target+namespace will be
+Add a reaction. If the user already has this exact reaction, this is a no-op. By
+default, any existing reactions by this user on the target+namespace will be
 removed first, then this reaction will be added.
 
 - `namespace` (optional): Scope reactions to a specific namespace
-- `allowMultipleReactions` (optional): If `true`, allows users to have multiple different reactions on the same target. Defaults to `false`.
+- `allowMultipleReactions` (optional): If `true`, allows users to have multiple
+  different reactions on the same target. Defaults to `false`.
 - Returns: `null`
 
 #### `remove(ctx, targetId, label, userId, namespace?)`
@@ -378,6 +481,31 @@ Get aggregated reaction counts for a target.
 
 - `namespace` (optional): Filter to a specific namespace
 - Returns: `Array<{ label: string, count: number }>`
+
+#### `getBatchCounts(ctx, targets)`
+
+Get aggregated reaction counts for multiple targets in a single query. This is
+more efficient than calling `getCounts` multiple times as it reduces overhead
+from crossing the component isolation boundary.
+
+- `targets`: Array of `{ targetId: string, namespace?: string }` - The targets
+  to get counts for
+- Returns:
+  `Array<{ targetId: string, namespace?: string, counts: Array<{ label: string, count: number }> }>`
+
+Example:
+
+```ts
+const results = await reactions.getBatchCounts(ctx, [
+  { targetId: "post-1" },
+  { targetId: "post-2", namespace: "sentiment" },
+]);
+// Returns:
+// [
+//   { targetId: "post-1", counts: [{ label: "👍", count: 5 }] },
+//   { targetId: "post-2", namespace: "sentiment", counts: [{ label: "❤️", count: 2 }] }
+// ]
+```
 
 #### `list(ctx, targetId, namespace?)`
 
@@ -435,6 +563,7 @@ export const {
   add,
   remove,
   getCounts,
+  getBatchCounts,
   list,
   getUserReactions,
   hasUserReacted,
@@ -489,6 +618,70 @@ returns JSON like:
 
 You can also include an optional `namespace` query parameter:
 `/reactions/getCounts?targetId=post-1&namespace=sentiment`
+
+## Performance Tips
+
+### Use Batch Operations for Lists
+
+When rendering a list of items (like a feed of posts), always use
+`getBatchCounts` instead of multiple `getCounts` calls:
+
+```ts
+// ❌ BAD: Multiple component boundary crossings
+const posts = await ctx.db.query("posts").take(10);
+const postsWithReactions = await Promise.all(
+  posts.map(async (post) => ({
+    ...post,
+    reactions: await reactions.getCounts(ctx, post._id),
+  })),
+);
+
+// ✅ GOOD: Single component boundary crossing
+const posts = await ctx.db.query("posts").take(10);
+const postIds = posts.map((p) => p._id);
+const batchResults = await reactions.getBatchCounts(
+  ctx,
+  postIds.map((id) => ({ targetId: id })),
+);
+
+// Map results back to posts
+const postsWithReactions = posts.map((post) => ({
+  ...post,
+  reactions: batchResults.find((r) => r.targetId === post._id)?.counts || [],
+}));
+```
+
+**Why this matters**: Components run in isolated environments. Each call across
+the component boundary has overhead. Batching reduces N calls to 1 call,
+significantly improving performance for lists.
+
+### Frontend Usage
+
+In React, consider batching at the query level rather than calling individual
+queries:
+
+```tsx
+// ❌ BAD: Each Post component makes its own query
+function Post({ postId }) {
+  const reactions = useQuery(api.example.getPostReactions, { postId });
+  // ...
+}
+
+// ✅ GOOD: Parent component batches all queries
+function PostList() {
+  const posts = useQuery(api.posts.list);
+  const postIds = posts?.map((p) => p._id) || [];
+  const allReactions = useQuery(api.example.getBatchPostReactions, { postIds });
+
+  return posts?.map((post) => (
+    <Post
+      key={post._id}
+      post={post}
+      reactions={allReactions?.find((r) => r.targetId === post._id)?.counts}
+    />
+  ));
+}
+```
 
 ## Data Model
 
