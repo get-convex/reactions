@@ -31,7 +31,7 @@ export const testQuery = query({
   args: { targetId: v.string() },
   returns: v.array(
     v.object({
-      reactionType: v.string(),
+      label: v.string(),
       count: v.number(),
     }),
   ),
@@ -43,34 +43,24 @@ export const testQuery = query({
 export const testMutation = mutation({
   args: {
     targetId: v.string(),
-    reactionType: v.string(),
+    label: v.string(),
     userId: v.string(),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    return await reactions.add(
-      ctx,
-      args.targetId,
-      args.reactionType,
-      args.userId,
-    );
+    return await reactions.add(ctx, args.targetId, args.label, args.userId);
   },
 });
 
 export const testAction = action({
   args: {
     targetId: v.string(),
-    reactionType: v.string(),
+    label: v.string(),
     userId: v.string(),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    return await reactions.add(
-      ctx,
-      args.targetId,
-      args.reactionType,
-      args.userId,
-    );
+    return await reactions.add(ctx, args.targetId, args.label, args.userId);
   },
 });
 
@@ -95,14 +85,14 @@ describe("Reactions thick client", () => {
     await t.run(async (ctx) => {
       await c.add(ctx, "post1", "👍", "user1");
       const counts = await c.getCounts(ctx, "post1");
-      expect(counts).toEqual([{ reactionType: "👍", count: 1 }]);
+      expect(counts).toEqual([{ label: "👍", count: 1 }]);
     });
   });
   test("should work from a test function", async () => {
     const t = initConvexTest(schema);
     const result = await t.mutation(testApi.testMutation, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user1",
     });
     expect(result).toBeNull();

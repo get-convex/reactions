@@ -18,31 +18,31 @@ describe("component lib", () => {
     const t = convexTest(schema, modules);
     const result = await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
     expect(result).toBeNull();
 
     const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "👍", count: 1 }]);
+    expect(counts).toEqual([{ label: "👍", count: 1 }]);
   });
 
   test("add reaction is idempotent", async () => {
     const t = convexTest(schema, modules);
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
     const result = await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
     expect(result).toBeNull();
 
     const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "👍", count: 1 }]);
+    expect(counts).toEqual([{ label: "👍", count: 1 }]);
   });
 
   test("multiple users multiple reactions", async () => {
@@ -51,21 +51,21 @@ describe("component lib", () => {
     // User 1 adds thumbs up
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     // User 2 adds thumbs up
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user2",
     });
 
     // User 2 adds heart (replaces their thumbs up)
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user2",
     });
 
@@ -74,8 +74,8 @@ describe("component lib", () => {
     expect(counts).toHaveLength(2);
     expect(counts).toEqual(
       expect.arrayContaining([
-        { reactionType: "👍", count: 1 },
-        { reactionType: "❤️", count: 1 },
+        { label: "👍", count: 1 },
+        { label: "❤️", count: 1 },
       ]),
     );
   });
@@ -85,13 +85,13 @@ describe("component lib", () => {
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
     // Adding heart replaces the thumbs up
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user1",
     });
 
@@ -109,14 +109,14 @@ describe("component lib", () => {
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     expect(
       await t.query(api.lib.hasUserReacted, {
         targetId: "post1",
-        reactionType: "👍",
+        label: "👍",
         userId: "user1",
       }),
     ).toBe(true);
@@ -124,7 +124,7 @@ describe("component lib", () => {
     expect(
       await t.query(api.lib.hasUserReacted, {
         targetId: "post1",
-        reactionType: "❤️",
+        label: "❤️",
         userId: "user1",
       }),
     ).toBe(false);
@@ -132,7 +132,7 @@ describe("component lib", () => {
     expect(
       await t.query(api.lib.hasUserReacted, {
         targetId: "post1",
-        reactionType: "👍",
+        label: "👍",
         userId: "user2",
       }),
     ).toBe(false);
@@ -143,13 +143,13 @@ describe("component lib", () => {
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     const result = await t.mutation(api.lib.remove, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
     expect(result).toBeNull();
@@ -163,7 +163,7 @@ describe("component lib", () => {
 
     const result = await t.mutation(api.lib.remove, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
     expect(result).toBeNull();
@@ -174,12 +174,12 @@ describe("component lib", () => {
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user2",
     });
 
@@ -194,32 +194,32 @@ describe("component lib", () => {
     // User adds thumbs up
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     let counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "👍", count: 1 }]);
+    expect(counts).toEqual([{ label: "👍", count: 1 }]);
 
     // User changes to heart (replaces thumbs up)
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user1",
     });
 
     counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "❤️", count: 1 }]);
+    expect(counts).toEqual([{ label: "❤️", count: 1 }]);
 
     // User changes to fire (replaces heart)
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "🔥",
+      label: "🔥",
       userId: "user1",
     });
 
     counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "🔥", count: 1 }]);
+    expect(counts).toEqual([{ label: "🔥", count: 1 }]);
 
     // User should only have one reaction
     const userReactions = await t.query(api.lib.getUserReactions, {
@@ -235,7 +235,7 @@ describe("component lib", () => {
     // User reacts in "sentiment" namespace
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
       namespace: "sentiment",
     });
@@ -243,7 +243,7 @@ describe("component lib", () => {
     // User reacts in "quality" namespace
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "⭐",
+      label: "⭐",
       userId: "user1",
       namespace: "quality",
     });
@@ -253,13 +253,13 @@ describe("component lib", () => {
       targetId: "post1",
       namespace: "sentiment",
     });
-    expect(sentimentCounts).toEqual([{ reactionType: "👍", count: 1 }]);
+    expect(sentimentCounts).toEqual([{ label: "👍", count: 1 }]);
 
     const qualityCounts = await t.query(api.lib.getCounts, {
       targetId: "post1",
       namespace: "quality",
     });
-    expect(qualityCounts).toEqual([{ reactionType: "⭐", count: 1 }]);
+    expect(qualityCounts).toEqual([{ label: "⭐", count: 1 }]);
   });
 
   test("reactions on different targets are isolated", async () => {
@@ -267,21 +267,21 @@ describe("component lib", () => {
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     await t.mutation(api.lib.add, {
       targetId: "post2",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     const post1Counts = await t.query(api.lib.getCounts, { targetId: "post1" });
     const post2Counts = await t.query(api.lib.getCounts, { targetId: "post2" });
 
-    expect(post1Counts).toEqual([{ reactionType: "👍", count: 1 }]);
-    expect(post2Counts).toEqual([{ reactionType: "👍", count: 1 }]);
+    expect(post1Counts).toEqual([{ label: "👍", count: 1 }]);
+    expect(post2Counts).toEqual([{ label: "👍", count: 1 }]);
   });
 
   test("remove doesn't affect other users' reactions", async () => {
@@ -289,31 +289,31 @@ describe("component lib", () => {
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user2",
     });
 
     // Remove user1's reaction
     await t.mutation(api.lib.remove, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "👍", count: 1 }]);
+    expect(counts).toEqual([{ label: "👍", count: 1 }]);
 
     // User2 should still have their reaction
     expect(
       await t.query(api.lib.hasUserReacted, {
         targetId: "post1",
-        reactionType: "👍",
+        label: "👍",
         userId: "user2",
       }),
     ).toBe(true);
@@ -325,27 +325,27 @@ describe("component lib", () => {
     // Add reactions from multiple users
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user2",
     });
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user3",
     });
 
     let counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "👍", count: 3 }]);
+    expect(counts).toEqual([{ label: "👍", count: 3 }]);
 
     // User1 changes to heart
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user1",
     });
 
@@ -353,15 +353,15 @@ describe("component lib", () => {
     expect(counts).toHaveLength(2);
     expect(counts).toEqual(
       expect.arrayContaining([
-        { reactionType: "👍", count: 2 },
-        { reactionType: "❤️", count: 1 },
+        { label: "👍", count: 2 },
+        { label: "❤️", count: 1 },
       ]),
     );
 
     // User2 removes their reaction
     await t.mutation(api.lib.remove, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user2",
     });
 
@@ -369,8 +369,8 @@ describe("component lib", () => {
     expect(counts).toHaveLength(2);
     expect(counts).toEqual(
       expect.arrayContaining([
-        { reactionType: "👍", count: 1 },
-        { reactionType: "❤️", count: 1 },
+        { label: "👍", count: 1 },
+        { label: "❤️", count: 1 },
       ]),
     );
   });
@@ -380,14 +380,14 @@ describe("component lib", () => {
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
       namespace: "sentiment",
     });
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "⭐",
+      label: "⭐",
       userId: "user1",
       namespace: "quality",
     });
@@ -403,11 +403,11 @@ describe("component lib", () => {
     });
 
     expect(sentimentReactions).toHaveLength(1);
-    expect(sentimentReactions[0].reactionType).toBe("👍");
+    expect(sentimentReactions[0].label).toBe("👍");
     expect(sentimentReactions[0].namespace).toBe("sentiment");
 
     expect(qualityReactions).toHaveLength(1);
-    expect(qualityReactions[0].reactionType).toBe("⭐");
+    expect(qualityReactions[0].label).toBe("⭐");
     expect(qualityReactions[0].namespace).toBe("quality");
   });
 
@@ -416,14 +416,14 @@ describe("component lib", () => {
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
       namespace: "sentiment",
     });
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "⭐",
+      label: "⭐",
       userId: "user1",
       namespace: "quality",
     });
@@ -449,28 +449,28 @@ describe("component lib", () => {
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     expect(
       await t.query(api.lib.hasUserReacted, {
         targetId: "post1",
-        reactionType: "👍",
+        label: "👍",
         userId: "user1",
       }),
     ).toBe(true);
 
     await t.mutation(api.lib.remove, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     expect(
       await t.query(api.lib.hasUserReacted, {
         targetId: "post1",
-        reactionType: "👍",
+        label: "👍",
         userId: "user1",
       }),
     ).toBe(false);
@@ -497,7 +497,7 @@ describe("component lib", () => {
 
     const hasReacted = await t.query(api.lib.hasUserReacted, {
       targetId: "nonexistent",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
     expect(hasReacted).toBe(false);
@@ -509,13 +509,13 @@ describe("component lib", () => {
     // Add and remove a reaction
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     await t.mutation(api.lib.remove, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
@@ -530,14 +530,14 @@ describe("component lib", () => {
     // Add reactions in both namespaces
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
       namespace: "sentiment",
     });
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "⭐",
+      label: "⭐",
       userId: "user1",
       namespace: "quality",
     });
@@ -545,7 +545,7 @@ describe("component lib", () => {
     // Change reaction in sentiment namespace
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user1",
       namespace: "sentiment",
     });
@@ -555,14 +555,14 @@ describe("component lib", () => {
       targetId: "post1",
       namespace: "quality",
     });
-    expect(qualityCounts).toEqual([{ reactionType: "⭐", count: 1 }]);
+    expect(qualityCounts).toEqual([{ label: "⭐", count: 1 }]);
 
     // Sentiment namespace should have the new reaction
     const sentimentCounts = await t.query(api.lib.getCounts, {
       targetId: "post1",
       namespace: "sentiment",
     });
-    expect(sentimentCounts).toEqual([{ reactionType: "❤️", count: 1 }]);
+    expect(sentimentCounts).toEqual([{ label: "❤️", count: 1 }]);
   });
 
   test("multiple users can have same reaction type", async () => {
@@ -570,28 +570,28 @@ describe("component lib", () => {
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user2",
     });
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user3",
     });
 
     const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "👍", count: 3 }]);
+    expect(counts).toEqual([{ label: "👍", count: 3 }]);
 
     const reactions = await t.query(api.lib.list, { targetId: "post1" });
     expect(reactions).toHaveLength(3);
-    expect(reactions.every((r) => r.reactionType === "👍")).toBe(true);
+    expect(reactions.every((r) => r.label === "👍")).toBe(true);
   });
 
   test("list returns reactions with creation time", async () => {
@@ -599,7 +599,7 @@ describe("component lib", () => {
 
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
@@ -618,14 +618,14 @@ describe("component lib", () => {
     // but let's test the remove function behavior
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     // Try to remove a different reaction type
     const result = await t.mutation(api.lib.remove, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user1",
     });
 
@@ -634,7 +634,7 @@ describe("component lib", () => {
     // Original reaction should still be there
     const hasReacted = await t.query(api.lib.hasUserReacted, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
     expect(hasReacted).toBe(true);
@@ -646,7 +646,7 @@ describe("component lib", () => {
     // Add without namespace
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
@@ -661,8 +661,8 @@ describe("component lib", () => {
       targetId: "post1",
     });
 
-    expect(countsWithUndefined).toEqual([{ reactionType: "👍", count: 1 }]);
-    expect(countsWithout).toEqual([{ reactionType: "👍", count: 1 }]);
+    expect(countsWithUndefined).toEqual([{ label: "👍", count: 1 }]);
+    expect(countsWithout).toEqual([{ label: "👍", count: 1 }]);
   });
 
   test("posting two reactions to same target+namespace only records the second", async () => {
@@ -671,7 +671,7 @@ describe("component lib", () => {
     // User adds first reaction
     const result1 = await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
     expect(result1).toBeNull();
@@ -679,7 +679,7 @@ describe("component lib", () => {
     // User adds second reaction - should replace the first
     const result2 = await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user1",
     });
     expect(result2).toBeNull();
@@ -687,12 +687,12 @@ describe("component lib", () => {
     // Only the second reaction should exist
     const reactions = await t.query(api.lib.list, { targetId: "post1" });
     expect(reactions).toHaveLength(1);
-    expect(reactions[0].reactionType).toBe("❤️");
+    expect(reactions[0].label).toBe("❤️");
     expect(reactions[0].userId).toBe("user1");
 
     // Counts should only show the second reaction
     const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
-    expect(counts).toEqual([{ reactionType: "❤️", count: 1 }]);
+    expect(counts).toEqual([{ label: "❤️", count: 1 }]);
 
     // User should only have the second reaction
     const userReactions = await t.query(api.lib.getUserReactions, {
@@ -705,7 +705,7 @@ describe("component lib", () => {
     expect(
       await t.query(api.lib.hasUserReacted, {
         targetId: "post1",
-        reactionType: "👍",
+        label: "👍",
         userId: "user1",
       }),
     ).toBe(false);
@@ -714,7 +714,7 @@ describe("component lib", () => {
     expect(
       await t.query(api.lib.hasUserReacted, {
         targetId: "post1",
-        reactionType: "❤️",
+        label: "❤️",
         userId: "user1",
       }),
     ).toBe(true);
@@ -726,7 +726,7 @@ describe("component lib", () => {
     // User adds first reaction in "sentiment" namespace
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
       namespace: "sentiment",
     });
@@ -737,12 +737,12 @@ describe("component lib", () => {
       namespace: "sentiment",
     });
     expect(reactions).toHaveLength(1);
-    expect(reactions[0].reactionType).toBe("👍");
+    expect(reactions[0].label).toBe("👍");
 
     // User adds second reaction in same namespace - should replace
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user1",
       namespace: "sentiment",
     });
@@ -753,7 +753,7 @@ describe("component lib", () => {
       namespace: "sentiment",
     });
     expect(reactions).toHaveLength(1);
-    expect(reactions[0].reactionType).toBe("❤️");
+    expect(reactions[0].label).toBe("❤️");
     expect(reactions[0].namespace).toBe("sentiment");
 
     // Counts should only show the second reaction
@@ -761,7 +761,7 @@ describe("component lib", () => {
       targetId: "post1",
       namespace: "sentiment",
     });
-    expect(counts).toEqual([{ reactionType: "❤️", count: 1 }]);
+    expect(counts).toEqual([{ label: "❤️", count: 1 }]);
   });
 
   test("posting three reactions in sequence only keeps the last one", async () => {
@@ -770,28 +770,28 @@ describe("component lib", () => {
     // Add first reaction
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     // Add second reaction
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user1",
     });
 
     // Add third reaction
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "🎉",
+      label: "🎉",
       userId: "user1",
     });
 
     // Only the last reaction should exist
     const reactions = await t.query(api.lib.list, { targetId: "post1" });
     expect(reactions).toHaveLength(1);
-    expect(reactions[0].reactionType).toBe("🎉");
+    expect(reactions[0].label).toBe("🎉");
 
     // User should only have the last reaction
     const userReactions = await t.query(api.lib.getUserReactions, {
@@ -804,7 +804,7 @@ describe("component lib", () => {
     expect(
       await t.query(api.lib.hasUserReacted, {
         targetId: "post1",
-        reactionType: "👍",
+        label: "👍",
         userId: "user1",
       }),
     ).toBe(false);
@@ -812,7 +812,7 @@ describe("component lib", () => {
     expect(
       await t.query(api.lib.hasUserReacted, {
         targetId: "post1",
-        reactionType: "❤️",
+        label: "❤️",
         userId: "user1",
       }),
     ).toBe(false);
@@ -824,21 +824,21 @@ describe("component lib", () => {
     // User1 adds thumbs up
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "👍",
+      label: "👍",
       userId: "user1",
     });
 
     // User2 adds heart
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "❤️",
+      label: "❤️",
       userId: "user2",
     });
 
     // User1 changes to fire (should not affect user2)
     await t.mutation(api.lib.add, {
       targetId: "post1",
-      reactionType: "🔥",
+      label: "🔥",
       userId: "user1",
     });
 
@@ -865,8 +865,8 @@ describe("component lib", () => {
     expect(counts).toHaveLength(2);
     expect(counts).toEqual(
       expect.arrayContaining([
-        { reactionType: "🔥", count: 1 },
-        { reactionType: "❤️", count: 1 },
+        { label: "🔥", count: 1 },
+        { label: "❤️", count: 1 },
       ]),
     );
   });

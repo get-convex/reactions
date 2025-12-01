@@ -23,13 +23,13 @@ export class Reactions {
   async add(
     ctx: CtxWith<"runMutation">,
     targetId: string,
-    reactionType: string,
+    label: string,
     userId: string,
     namespace?: string,
   ) {
     return ctx.runMutation(this.component.lib.add, {
       targetId,
-      reactionType,
+      label,
       userId,
       namespace,
     });
@@ -42,13 +42,13 @@ export class Reactions {
   async remove(
     ctx: CtxWith<"runMutation">,
     targetId: string,
-    reactionType: string,
+    label: string,
     userId: string,
     namespace?: string,
   ) {
     return ctx.runMutation(this.component.lib.remove, {
       targetId,
-      reactionType,
+      label,
       userId,
       namespace,
     });
@@ -94,13 +94,13 @@ export class Reactions {
   async hasUserReacted(
     ctx: CtxWith<"runQuery">,
     targetId: string,
-    reactionType: string,
+    label: string,
     userId: string,
     namespace?: string,
   ) {
     return ctx.runQuery(this.component.lib.hasUserReacted, {
       targetId,
-      reactionType,
+      label,
       userId,
       namespace,
     });

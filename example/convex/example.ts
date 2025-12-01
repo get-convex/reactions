@@ -91,7 +91,7 @@ export const getAllowedEmojis = query({
 
 /**
  * Example: Get all reaction counts for a post
- * Returns an array like: [{ reactionType: "👍", count: 5 }, { reactionType: "❤️", count: 3 }]
+ * Returns an array like: [{ label: "👍", count: 5 }, { label: "❤️", count: 3 }]
  */
 export const getPostReactions = query({
   args: {
@@ -99,7 +99,7 @@ export const getPostReactions = query({
   },
   returns: v.array(
     v.object({
-      reactionType: v.string(),
+      label: v.string(),
       count: v.number(),
     }),
   ),

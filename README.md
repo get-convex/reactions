@@ -211,7 +211,7 @@ export const getPostReactions = query({
   args: { postId: v.string() },
   returns: v.array(
     v.object({
-      reactionType: v.string(),
+      label: v.string(),
       count: v.number(),
     }),
   ),
@@ -219,7 +219,7 @@ export const getPostReactions = query({
     return await reactions.getCounts(ctx, args.postId);
   },
 });
-// Returns: [{ reactionType: "👍", count: 5 }, { reactionType: "❤️", count: 3 }]
+// Returns: [{ label: "👍", count: 5 }, { label: "❤️", count: 3 }]
 ```
 
 ### Check User's Reactions
@@ -274,10 +274,10 @@ await reactions.add(ctx, "post-1", "⭐", "user-1", "quality");
 
 // Get counts for each namespace
 const sentimentCounts = await reactions.getCounts(ctx, "post-1", "sentiment");
-// Returns: [{ reactionType: "❤️", count: 1 }] - only the latest sentiment
+// Returns: [{ label: "❤️", count: 1 }] - only the latest sentiment
 
 const qualityCounts = await reactions.getCounts(ctx, "post-1", "quality");
-// Returns: [{ reactionType: "⭐", count: 1 }]
+// Returns: [{ label: "⭐", count: 1 }]
 ```
 
 Without a namespace (or `undefined`), all reactions are in the default
@@ -322,7 +322,7 @@ cascade deletion.
 All methods accept an optional `namespace` parameter to scope reactions to
 different contexts.
 
-#### `add(ctx, targetId, reactionType, userId, namespace?)`
+#### `add(ctx, targetId, label, userId, namespace?)`
 
 Add a reaction. If the user already has this exact reaction, this is a no-op.
 Otherwise, any existing reactions by this user on the target+namespace will be
@@ -332,7 +332,7 @@ removed first, then this reaction will be added.
 - Returns: `{ added: boolean }` - false if the exact same reaction already
   existed
 
-#### `remove(ctx, targetId, reactionType, userId, namespace?)`
+#### `remove(ctx, targetId, label, userId, namespace?)`
 
 Remove a reaction (idempotent - safe to call multiple times).
 
@@ -344,7 +344,7 @@ Remove a reaction (idempotent - safe to call multiple times).
 Get aggregated reaction counts for a target.
 
 - `namespace` (optional): Filter to a specific namespace
-- Returns: `Array<{ reactionType: string, count: number }>`
+- Returns: `Array<{ label: string, count: number }>`
 
 #### `list(ctx, targetId, namespace?)`
 
@@ -352,7 +352,7 @@ Get all individual reaction documents for a target.
 
 - `namespace` (optional): Filter to a specific namespace
 - Returns: Array of reaction documents with `_id`, `_creationTime`, `targetId`,
-  `reactionType`, `userId`, `namespace`
+  `label`, `userId`, `namespace`
 
 #### `getUserReactions(ctx, targetId, userId, namespace?)`
 
@@ -361,7 +361,7 @@ Get all reaction types a user has used on a target.
 - `namespace` (optional): Filter to a specific namespace
 - Returns: `string[]` - array of reaction types
 
-#### `hasUserReacted(ctx, targetId, reactionType, userId, namespace?)`
+#### `hasUserReacted(ctx, targetId, label, userId, namespace?)`
 
 Check if a user has reacted with a specific reaction type.
 
@@ -449,8 +449,8 @@ returns JSON like:
 
 ```json
 [
-  { "reactionType": "👍", "count": 5 },
-  { "reactionType": "❤️", "count": 3 }
+  { "label": "👍", "count": 5 },
+  { "label": "❤️", "count": 3 }
 ]
 ```
 
@@ -461,14 +461,14 @@ You can also include an optional `namespace` query parameter:
 
 The component uses two tables:
 
-- **reactions**: Individual reactions (one per user + target + reactionType)
+- **reactions**: Individual reactions (one per user + target + label)
   - `targetId`: string - the ID of the thing being reacted to
-  - `reactionType`: string - the reaction (e.g., "👍", "❤️")
+  - `label`: string - the reaction (e.g., "👍", "❤️")
   - `userId`: string - who reacted
 
 - **reactionCounts**: Denormalized aggregates for fast queries
   - `targetId`: string
-  - `reactionType`: string
+  - `label`: string
   - `count`: number
 
 See more example usage in [example.ts](./example/convex/example.ts) for

@@ -27,12 +27,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       add: FunctionReference<
         "mutation",
         "internal",
-        {
-          namespace?: string;
-          reactionType: string;
-          targetId: string;
-          userId: string;
-        },
+        { label: string; namespace?: string; targetId: string; userId: string },
         null,
         Name
       >;
@@ -47,7 +42,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         { namespace?: string; targetId: string },
-        Array<{ count: number; reactionType: string }>,
+        Array<{ count: number; label: string }>,
         Name
       >;
       getUserReactions: FunctionReference<
@@ -60,12 +55,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       hasUserReacted: FunctionReference<
         "query",
         "internal",
-        {
-          namespace?: string;
-          reactionType: string;
-          targetId: string;
-          userId: string;
-        },
+        { label: string; namespace?: string; targetId: string; userId: string },
         boolean,
         Name
       >;
@@ -76,8 +66,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         Array<{
           _creationTime: number;
           _id: string;
+          label: string;
           namespace?: string;
-          reactionType: string;
           targetId: string;
           userId: string;
         }>,
@@ -86,12 +76,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       remove: FunctionReference<
         "mutation",
         "internal",
-        {
-          namespace?: string;
-          reactionType: string;
-          targetId: string;
-          userId: string;
-        },
+        { label: string; namespace?: string; targetId: string; userId: string },
         null,
         Name
       >;

@@ -33,7 +33,7 @@ describe("example", () => {
       postId: "post2",
     });
 
-    expect(counts).toEqual([{ reactionType: "❤️", count: 1 }]);
+    expect(counts).toEqual([{ label: "❤️", count: 1 }]);
   });
 
   test("getUserPostReactions", async () => {

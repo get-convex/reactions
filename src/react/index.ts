@@ -32,13 +32,13 @@ import type { FunctionReference } from "convex/server";
  *             key={emoji}
  *             onClick={() => {
  *               if (hasReacted) {
- *                 remove({ reactionType: emoji });
+ *                 remove({ label: emoji });
  *               } else {
- *                 add({ reactionType: emoji });
+ *                 add({ label: emoji });
  *               }
  *             }}
  *           >
- *             {emoji} {counts?.find((r) => r.reactionType === emoji)?.count || 0}
+ *             {emoji} {counts?.find((r) => r.label === emoji)?.count || 0}
  *           </button>
  *         );
  *       })}
@@ -59,7 +59,7 @@ export function useReactions({
       "query",
       "public",
       { targetId: string },
-      Array<{ reactionType: string; count: number }>
+      Array<{ label: string; count: number }>
     >;
     getUserReactions: FunctionReference<
       "query",
@@ -70,13 +70,13 @@ export function useReactions({
     add: FunctionReference<
       "mutation",
       "public",
-      { targetId: string; reactionType: string; userId: string },
+      { targetId: string; label: string; userId: string },
       { added: boolean }
     >;
     remove: FunctionReference<
       "mutation",
       "public",
-      { targetId: string; reactionType: string; userId: string },
+      { targetId: string; label: string; userId: string },
       { removed: boolean }
     >;
   };
@@ -86,12 +86,12 @@ export function useReactions({
   const addMutation = useMutation(api.add);
   const removeMutation = useMutation(api.remove);
 
-  const add = ({ reactionType }: { reactionType: string }) => {
-    return addMutation({ targetId, reactionType, userId });
+  const add = ({ label }: { label: string }) => {
+    return addMutation({ targetId, label, userId });
   };
 
-  const remove = ({ reactionType }: { reactionType: string }) => {
-    return removeMutation({ targetId, reactionType, userId });
+  const remove = ({ label }: { label: string }) => {
+    return removeMutation({ targetId, label, userId });
   };
 
   return {

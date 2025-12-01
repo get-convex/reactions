@@ -138,7 +138,7 @@ function Post({ post, userId }: { post: PostData; userId: string }) {
       >
         {emojis.map((emoji) => {
           const count =
-            reactionCounts?.find((r) => r.reactionType === emoji)?.count || 0;
+            reactionCounts?.find((r) => r.label === emoji)?.count || 0;
           const hasReacted = userReactions?.includes(emoji);
 
           return (
