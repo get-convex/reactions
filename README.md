@@ -154,8 +154,9 @@ This makes the component perfect for:
 - **Rating systems** where users can change their rating
 - **Voting systems** where users can change their vote
 
-If you need multiple reactions per user, use different **namespaces** for each
-reaction category.
+If you need multiple reactions per user, you have two options:
+- Use different **namespaces** for each reaction category, or
+- Set `allowMultipleReactions: true` to allow multiple reactions in the same namespace
 
 ### Add a Reaction
 
@@ -179,6 +180,38 @@ export const addReaction = mutation({
   },
 });
 ```
+
+### Allow Multiple Reactions Per User
+
+By default, each user can only have one reaction per target. To allow a user to have multiple different reactions on the same target, set `allowMultipleReactions` to `true`:
+
+```ts
+export const addMultipleReaction = mutation({
+  args: {
+    postId: v.string(),
+    emoji: v.string(),
+    userId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await reactions.add(
+      ctx,
+      args.postId,
+      args.emoji,
+      args.userId,
+      undefined, // namespace
+      true, // allowMultipleReactions
+    );
+    return null;
+  },
+});
+```
+
+With `allowMultipleReactions: true`:
+- Users can react with multiple different emojis on the same target
+- Adding the same reaction twice is still a no-op (idempotent)
+- Previous reactions are NOT removed when adding a new one
+- This is useful for scenarios where you want users to express multiple emotions simultaneously
 
 ### Remove a Reaction
 
@@ -322,15 +355,15 @@ cascade deletion.
 All methods accept an optional `namespace` parameter to scope reactions to
 different contexts.
 
-#### `add(ctx, targetId, label, userId, namespace?)`
+#### `add(ctx, targetId, label, userId, namespace?, allowMultipleReactions?)`
 
 Add a reaction. If the user already has this exact reaction, this is a no-op.
-Otherwise, any existing reactions by this user on the target+namespace will be
+By default, any existing reactions by this user on the target+namespace will be
 removed first, then this reaction will be added.
 
 - `namespace` (optional): Scope reactions to a specific namespace
-- Returns: `{ added: boolean }` - false if the exact same reaction already
-  existed
+- `allowMultipleReactions` (optional): If `true`, allows users to have multiple different reactions on the same target. Defaults to `false`.
+- Returns: `null`
 
 #### `remove(ctx, targetId, label, userId, namespace?)`
 

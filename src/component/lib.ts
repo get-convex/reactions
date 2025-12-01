@@ -5,7 +5,8 @@ import type { DataModel } from "./_generated/dataModel.js";
 
 /**
  * Add a reaction for a user on a target.
- * Any existing reactions by this user on this target+namespace will be removed first.
+ * By default, any existing reactions by this user on this target+namespace will be removed first.
+ * Set allowMultipleReactions to true to allow a user to have multiple different reactions on the same target.
  * If the exact reaction already exists, this is a no-op.
  */
 export const add = mutation({
@@ -14,16 +15,37 @@ export const add = mutation({
     label: v.string(),
     userId: v.string(),
     namespace: v.optional(v.string()),
+    allowMultipleReactions: v.optional(v.boolean()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    // Check if this exact reaction already exists
+    const existing = await ctx.db
+      .query("reactions")
+      .withIndex("targetId_namespace_userId_label", (q) =>
+        q
+          .eq("targetId", args.targetId)
+          .eq("namespace", args.namespace ?? undefined)
+          .eq("userId", args.userId)
+          .eq("label", args.label),
+      )
+      .unique();
+
+    // If the exact reaction already exists, this is a no-op
+    if (existing) {
+      return;
+    }
+
     // Remove any other reactions by this user on this target+namespace
-    await removeAllUserReactionsOnTarget(
-      ctx,
-      args.targetId,
-      args.userId,
-      args.namespace,
-    );
+    // unless allowMultipleReactions is true
+    if (!args.allowMultipleReactions) {
+      await removeAllUserReactionsOnTarget(
+        ctx,
+        args.targetId,
+        args.userId,
+        args.namespace,
+      );
+    }
 
     // Add the new reaction
     await ctx.db.insert("reactions", {

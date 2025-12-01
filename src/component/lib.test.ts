@@ -870,4 +870,156 @@ describe("component lib", () => {
       ]),
     );
   });
+
+  test("allowMultipleReactions allows user to have multiple reactions on same target", async () => {
+    const t = convexTest(schema, modules);
+
+    // User adds thumbs up with allowMultipleReactions
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      label: "👍",
+      userId: "user1",
+      allowMultipleReactions: true,
+    });
+
+    // User adds heart with allowMultipleReactions
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      label: "❤️",
+      userId: "user1",
+      allowMultipleReactions: true,
+    });
+
+    // User adds fire with allowMultipleReactions
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      label: "🔥",
+      userId: "user1",
+      allowMultipleReactions: true,
+    });
+
+    // User should have all three reactions
+    const userReactions = await t.query(api.lib.getUserReactions, {
+      targetId: "post1",
+      userId: "user1",
+    });
+    expect(userReactions).toHaveLength(3);
+    expect(userReactions).toEqual(
+      expect.arrayContaining(["👍", "❤️", "🔥"]),
+    );
+
+    // Counts should reflect all three reactions
+    const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
+    expect(counts).toHaveLength(3);
+    expect(counts).toEqual(
+      expect.arrayContaining([
+        { label: "👍", count: 1 },
+        { label: "❤️", count: 1 },
+        { label: "🔥", count: 1 },
+      ]),
+    );
+  });
+
+  test("allowMultipleReactions does not duplicate existing reactions", async () => {
+    const t = convexTest(schema, modules);
+
+    // User adds thumbs up
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      label: "👍",
+      userId: "user1",
+      allowMultipleReactions: true,
+    });
+
+    // User adds thumbs up again (should be a no-op)
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      label: "👍",
+      userId: "user1",
+      allowMultipleReactions: true,
+    });
+
+    // User should only have one thumbs up reaction
+    const userReactions = await t.query(api.lib.getUserReactions, {
+      targetId: "post1",
+      userId: "user1",
+    });
+    expect(userReactions).toEqual(["👍"]);
+
+    // Count should be 1
+    const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
+    expect(counts).toEqual([{ label: "👍", count: 1 }]);
+  });
+
+  test("default behavior still replaces previous reactions", async () => {
+    const t = convexTest(schema, modules);
+
+    // User adds thumbs up
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      label: "👍",
+      userId: "user1",
+    });
+
+    // User adds heart (should replace thumbs up since allowMultipleReactions is not set)
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      label: "❤️",
+      userId: "user1",
+    });
+
+    // User should only have heart reaction
+    const userReactions = await t.query(api.lib.getUserReactions, {
+      targetId: "post1",
+      userId: "user1",
+    });
+    expect(userReactions).toEqual(["❤️"]);
+
+    // Count should only show heart
+    const counts = await t.query(api.lib.getCounts, { targetId: "post1" });
+    expect(counts).toEqual([{ label: "❤️", count: 1 }]);
+  });
+
+  test("allowMultipleReactions works with namespaces", async () => {
+    const t = convexTest(schema, modules);
+
+    // User adds multiple reactions in "sentiment" namespace
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      label: "👍",
+      userId: "user1",
+      namespace: "sentiment",
+      allowMultipleReactions: true,
+    });
+
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      label: "❤️",
+      userId: "user1",
+      namespace: "sentiment",
+      allowMultipleReactions: true,
+    });
+
+    // User should have both reactions in sentiment namespace
+    const userReactions = await t.query(api.lib.getUserReactions, {
+      targetId: "post1",
+      userId: "user1",
+      namespace: "sentiment",
+    });
+    expect(userReactions).toHaveLength(2);
+    expect(userReactions).toEqual(expect.arrayContaining(["👍", "❤️"]));
+
+    // Counts should reflect both reactions
+    const counts = await t.query(api.lib.getCounts, {
+      targetId: "post1",
+      namespace: "sentiment",
+    });
+    expect(counts).toHaveLength(2);
+    expect(counts).toEqual(
+      expect.arrayContaining([
+        { label: "👍", count: 1 },
+        { label: "❤️", count: 1 },
+      ]),
+    );
+  });
 });

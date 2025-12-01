@@ -56,6 +56,40 @@ export const addReaction = mutation({
 });
 
 /**
+ * Example: Add a reaction to a post allowing multiple reactions per user
+ * Unlike addReaction, this allows a user to have multiple different reactions on the same post.
+ * If the user already has this exact reaction, this is a no-op.
+ *
+ * This is useful for scenarios where you want users to be able to express
+ * multiple emotions or reactions on the same content.
+ */
+export const addMultipleReaction = mutation({
+  args: {
+    postId: v.string(),
+    emoji: v.string(),
+    userId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Validate that the emoji is one of the allowed ones
+    if (!ALLOWED_EMOJIS.includes(args.emoji as any)) {
+      throw new Error(
+        `Invalid emoji: "${args.emoji}". Allowed emojis are: ${ALLOWED_EMOJIS.join(", ")}`,
+      );
+    }
+
+    await reactions.add(
+      ctx,
+      args.postId,
+      args.emoji,
+      args.userId,
+      undefined, // namespace
+      true, // allowMultipleReactions
+    );
+  },
+});
+
+/**
  * Example: Remove a reaction from a post
  */
 export const removeReaction = mutation({

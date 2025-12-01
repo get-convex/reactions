@@ -18,6 +18,8 @@ export class Reactions {
 
   /**
    * Add a reaction for a user on a target.
+   * By default, any existing reactions by this user on this target+namespace will be removed first.
+   * Set allowMultipleReactions to true to allow a user to have multiple different reactions on the same target.
    * This is idempotent - if the reaction already exists, it does nothing.
    */
   async add(
@@ -26,12 +28,14 @@ export class Reactions {
     label: string,
     userId: string,
     namespace?: string,
+    allowMultipleReactions?: boolean,
   ) {
     return ctx.runMutation(this.component.lib.add, {
       targetId,
       label,
       userId,
       namespace,
+      allowMultipleReactions,
     });
   }
 

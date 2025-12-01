@@ -27,7 +27,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       add: FunctionReference<
         "mutation",
         "internal",
-        { label: string; namespace?: string; targetId: string; userId: string },
+        {
+          allowMultipleReactions?: boolean;
+          label: string;
+          namespace?: string;
+          targetId: string;
+          userId: string;
+        },
         null,
         Name
       >;
