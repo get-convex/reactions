@@ -17,7 +17,17 @@ import { v } from "convex/values";
 export const reactions = new Reactions(components.reactions, {});
 
 // Define the set of allowed emoji reactions
-const ALLOWED_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"] as const;
+const ALLOWED_EMOJIS = [
+  "👍",
+  "❤️",
+  "😂",
+  "😮",
+  "😢",
+  "🙏",
+  "👀",
+  "🚀",
+  "🎉",
+] as const;
 
 /**
  * Example: Add a reaction to a post

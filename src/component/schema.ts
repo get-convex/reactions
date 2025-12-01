@@ -10,9 +10,9 @@ export default defineSchema({
     namespace: v.optional(v.string()),
   }).index("targetId_namespace_userId_reactionType", [
     "targetId",
-    "namespace",
+    "namespace", // "likes", 
     "userId",
-    "reactionType",
+    "reactionType", // "♥️", "👍", "👎", etc.
   ]),
 
   // Denormalized counts for fast aggregation
