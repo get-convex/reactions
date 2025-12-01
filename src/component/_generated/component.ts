@@ -44,6 +44,17 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         null,
         Name
       >;
+      getBatchCounts: FunctionReference<
+        "query",
+        "internal",
+        { targets: Array<{ namespace?: string; targetId: string }> },
+        Array<{
+          counts: Array<{ count: number; label: string }>;
+          namespace?: string;
+          targetId: string;
+        }>,
+        Name
+      >;
       getCounts: FunctionReference<
         "query",
         "internal",

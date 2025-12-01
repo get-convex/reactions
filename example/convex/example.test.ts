@@ -69,4 +69,49 @@ describe("example", () => {
 
     expect(hasLiked).toBe(true);
   });
+
+  test("getBatchPostReactions", async () => {
+    const t = initConvexTest();
+
+    // Add reactions to multiple posts
+    await t.mutation(api.example.addReaction, {
+      postId: "post5",
+      emoji: "👍",
+      userId: "user1",
+    });
+    await t.mutation(api.example.addReaction, {
+      postId: "post5",
+      emoji: "❤️",
+      userId: "user2",
+    });
+    await t.mutation(api.example.addReaction, {
+      postId: "post6",
+      emoji: "🚀",
+      userId: "user1",
+    });
+
+    // Query batch reactions
+    const batchResults = await t.query(api.example.getBatchPostReactions, {
+      postIds: ["post5", "post6", "post7"],
+    });
+
+    expect(batchResults).toHaveLength(3);
+    
+    // Check post5 reactions
+    const post5Result = batchResults.find((r) => r.targetId === "post5");
+    expect(post5Result?.counts).toEqual(
+      expect.arrayContaining([
+        { label: "👍", count: 1 },
+        { label: "❤️", count: 1 },
+      ]),
+    );
+
+    // Check post6 reactions
+    const post6Result = batchResults.find((r) => r.targetId === "post6");
+    expect(post6Result?.counts).toEqual([{ label: "🚀", count: 1 }]);
+
+    // Check post7 (no reactions)
+    const post7Result = batchResults.find((r) => r.targetId === "post7");
+    expect(post7Result?.counts).toEqual([]);
+  });
 });

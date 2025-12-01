@@ -126,6 +126,60 @@ export const getCounts = query({
 });
 
 /**
+ * Get reaction counts for multiple targets in a single query.
+ * This is more efficient than calling getCounts multiple times.
+ */
+export const getBatchCounts = query({
+  args: {
+    targets: v.array(
+      v.object({
+        targetId: v.string(),
+        namespace: v.optional(v.string()),
+      }),
+    ),
+  },
+  returns: v.array(
+    v.object({
+      targetId: v.string(),
+      namespace: v.optional(v.string()),
+      counts: v.array(
+        v.object({
+          label: v.string(),
+          count: v.number(),
+        }),
+      ),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const results = [];
+
+    for (const target of args.targets) {
+      const counts = await ctx.db
+        .query("reactionCounts")
+        .withIndex("targetId_namespace_label", (q) =>
+          q
+            .eq("targetId", target.targetId)
+            .eq("namespace", target.namespace ?? undefined),
+        )
+        .collect();
+
+      results.push({
+        targetId: target.targetId,
+        namespace: target.namespace,
+        counts: counts
+          .filter((c) => c.count > 0)
+          .map((c) => ({
+            label: c.label,
+            count: c.count,
+          })),
+      });
+    }
+
+    return results;
+  },
+});
+
+/**
  * Get all reactions for a target (individual reactions, not aggregated).
  */
 export const list = query({

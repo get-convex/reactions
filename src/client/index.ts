@@ -70,6 +70,18 @@ export class Reactions {
   }
 
   /**
+   * Get reaction counts for multiple targets in a single query.
+   * This is more efficient than calling getCounts multiple times as it reduces
+   * overhead from crossing the component isolation boundary.
+   */
+  async getBatchCounts(
+    ctx: CtxWith<"runQuery">,
+    targets: Array<{ targetId: string; namespace?: string }>,
+  ) {
+    return ctx.runQuery(this.component.lib.getBatchCounts, { targets });
+  }
+
+  /**
    * Get all individual reactions for a target.
    */
   async list(ctx: CtxWith<"runQuery">, targetId: string, namespace?: string) {

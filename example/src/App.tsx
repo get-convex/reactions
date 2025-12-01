@@ -45,6 +45,8 @@ interface PostData {
 
 function Post({ post, userId }: { post: PostData; userId: string }) {
   const postId = post._id;
+  // Note: For multiple posts, you can use getBatchPostReactions to reduce overhead:
+  // const batchResults = useQuery(api.example.getBatchPostReactions, { postIds: [postId1, postId2, ...] });
   const reactionCounts = useQuery(api.example.getPostReactions, { postId });
   const userReactions = useQuery(api.example.getUserPostReactions, {
     postId,

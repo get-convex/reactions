@@ -143,6 +143,34 @@ export const getPostReactions = query({
 });
 
 /**
+ * Example: Get reaction counts for multiple posts in a single query
+ * This is more efficient than calling getPostReactions multiple times as it reduces
+ * overhead from crossing the component isolation boundary.
+ * Returns a record mapping postId to its reaction counts.
+ */
+export const getBatchPostReactions = query({
+  args: {
+    postIds: v.array(v.string()),
+  },
+  returns: v.array(
+    v.object({
+      targetId: v.string(),
+      namespace: v.optional(v.string()),
+      counts: v.array(
+        v.object({
+          label: v.string(),
+          count: v.number(),
+        }),
+      ),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const targets = args.postIds.map((postId) => ({ targetId: postId }));
+    return await reactions.getBatchCounts(ctx, targets);
+  },
+});
+
+/**
  * Example: Check which reactions a specific user has made on a post
  */
 export const getUserPostReactions = query({

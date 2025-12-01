@@ -1022,4 +1022,65 @@ describe("component lib", () => {
       ]),
     );
   });
+
+  test("getBatchCounts returns counts for multiple targets", async () => {
+    const t = convexTest(schema, modules);
+
+    // Add reactions to multiple targets
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      label: "👍",
+      userId: "user1",
+    });
+    await t.mutation(api.lib.add, {
+      targetId: "post1",
+      label: "❤️",
+      userId: "user2",
+    });
+    await t.mutation(api.lib.add, {
+      targetId: "post2",
+      label: "🚀",
+      userId: "user1",
+    });
+    await t.mutation(api.lib.add, {
+      targetId: "post3",
+      label: "👀",
+      userId: "user3",
+      namespace: "special",
+    });
+
+    // Get batch counts
+    const batchResults = await t.query(api.lib.getBatchCounts, {
+      targets: [
+        { targetId: "post1" },
+        { targetId: "post2" },
+        { targetId: "post3", namespace: "special" },
+        { targetId: "post4" }, // Target with no reactions
+      ],
+    });
+
+    expect(batchResults).toHaveLength(4);
+
+    // Check post1 results
+    const post1Result = batchResults.find((r) => r.targetId === "post1");
+    expect(post1Result?.counts).toEqual(
+      expect.arrayContaining([
+        { label: "👍", count: 1 },
+        { label: "❤️", count: 1 },
+      ]),
+    );
+
+    // Check post2 results
+    const post2Result = batchResults.find((r) => r.targetId === "post2");
+    expect(post2Result?.counts).toEqual([{ label: "🚀", count: 1 }]);
+
+    // Check post3 results with namespace
+    const post3Result = batchResults.find((r) => r.targetId === "post3");
+    expect(post3Result?.counts).toEqual([{ label: "👀", count: 1 }]);
+    expect(post3Result?.namespace).toBe("special");
+
+    // Check post4 (no reactions)
+    const post4Result = batchResults.find((r) => r.targetId === "post4");
+    expect(post4Result?.counts).toEqual([]);
+  });
 });
