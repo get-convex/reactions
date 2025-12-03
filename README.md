@@ -104,10 +104,13 @@ Run `npm create convex` or follow any of the
 
 ## Installation
 
-Install the component package:
+The react component is not available on npm, but is a reference of how to set up
+a component to be published.
+
+Example of how to Install the component package (if it were published):
 
 ```sh
-npm install @convex/reactions
+npm install @example_organziation/reactions
 ```
 
 Create a `convex.config.ts` file in your app's `convex/` folder and install the
